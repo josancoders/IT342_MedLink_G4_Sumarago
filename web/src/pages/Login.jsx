@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { loginUser } from '../api/auth';
+import { GoogleLogin } from '@react-oauth/google';
+import { loginUser, googleLogin } from '../api/auth';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -28,6 +29,25 @@ export default function Login() {
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    setLoading(true);
+    try {
+      // credentialResponse.credential is the Google ID token (JWT)
+      const res = await googleLogin(credentialResponse.credential);
+      if (res.data.success) {
+        localStorage.setItem('user', JSON.stringify(res.data));
+        navigate('/dashboard');
+      } else {
+        setError(res.data.message);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Google login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -70,6 +90,16 @@ export default function Login() {
             {loading ? 'Signing in…' : 'Sign In'}
           </button>
         </form>
+
+        <div className="auth-divider"><span>or</span></div>
+
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError('Google sign-in was cancelled or failed.')}
+            useOneTap={false}
+          />
+        </div>
 
         <p className="auth-footer">
           Don&apos;t have an account? <Link to="/register">Register here</Link>

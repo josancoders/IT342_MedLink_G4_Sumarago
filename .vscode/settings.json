@@ -1,10 +1,13 @@
-{
+{   
+    "spring-boot.ls.problem.application-properties.PROP_UNKNOWN_PROPERTY": "IGNORE",
     "java.jdt.ls.java.home": "C:\\Users\\L13X16W32\\AppData\\Local\\Programs\\Eclipse Adoptium\\jdk-17.0.18.8-hotspot",
     "java.configuration.runtimes": [
         {
             "name": "JavaSE-17",
             "path": "C:\\Users\\L13X16W32\\AppData\\Local\\Programs\\Eclipse Adoptium\\jdk-17.0.18.8-hotspot",
             "default": true
+            
         }
-    ]
+    ],
+    "java.debug.settings.onBuildFailureProceed": true
 }

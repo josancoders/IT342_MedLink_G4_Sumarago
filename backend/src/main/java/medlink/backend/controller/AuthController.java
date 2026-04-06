@@ -9,6 +9,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -49,6 +50,19 @@ public class AuthController {
         }
 
         AuthResponse response = userService.login(request);
+        if (!response.isSuccess()) {
+            return ResponseEntity.status(401).body(response);
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> googleLogin(@RequestBody Map<String, String> body) {
+        String idToken = body.get("idToken");
+        if (idToken == null || idToken.isBlank()) {
+            return ResponseEntity.badRequest().body(new AuthResponse(false, "Missing Google ID token."));
+        }
+        AuthResponse response = userService.googleLogin(idToken);
         if (!response.isSuccess()) {
             return ResponseEntity.status(401).body(response);
         }

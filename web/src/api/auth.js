@@ -7,3 +7,6 @@ export const registerUser = (data) =>
 
 export const loginUser = (data) =>
   axios.post(`${API_BASE}/login`, data);
+
+export const googleLogin = (idToken) =>
+  axios.post(`${API_BASE}/google`, { idToken });

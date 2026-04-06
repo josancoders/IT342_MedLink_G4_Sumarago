@@ -17,8 +17,11 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(name = "password_hash", nullable = false)
+    @Column(name = "password_hash")
     private String passwordHash;
+
+    @Column(nullable = false)
+    private String provider = "local";
 
     @Column(nullable = false)
     private String role = "PATIENT";
@@ -46,6 +49,13 @@ public class User {
         this.role = role;
     }
 
+    public User(String fullName, String email, String provider, boolean isOAuth) {
+        this.fullName = fullName;
+        this.email = email;
+        this.provider = provider;
+        this.passwordHash = null;
+    }
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -57,6 +67,9 @@ public class User {
 
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+
+    public String getProvider() { return provider; }
+    public void setProvider(String provider) { this.provider = provider; }
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }

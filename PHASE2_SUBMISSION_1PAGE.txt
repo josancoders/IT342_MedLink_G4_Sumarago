@@ -1,0 +1,19 @@
+MedLink Mobile App - Phase 2 Summary
+
+HOW REGISTRATION WORKS
+User clicks "Register" on login screen → enters Full Name, Email, Password, Confirm Password → validation occurs (email format, password min 6 chars, passwords match) → clicks Register button → app sends POST request to /api/auth/register with user data → backend validates email uniqueness, hashes password, creates User record → returns success response → app displays "Registration successful!" → user navigated to login screen.
+
+HOW LOGIN WORKS
+App checks if token exists in storage on launch (session persistence - auto-redirects to Dashboard if logged in) → if not logged in, shows login form with Email and Password fields → user enters credentials → validation occurs (email format, password min 6 chars) → clicks Login → app sends POST request to /api/auth/login with email/password → backend finds user, validates password, generates JWT token → returns {success: true, token: "jwt", userId: "123"} → app saves token to SharedPreferences → app navigates to Dashboard → displays "Welcome, user@email.com!" → session now active → user can logout to clear token and return to login.
+
+API INTEGRATION USED
+Technology: Retrofit 2.10.0 (HTTP client), Gson 2.10.1 (JSON serialization), Kotlin Coroutines 1.7.3 (async operations), Base URL: http://10.0.2.2:8080/
+
+Endpoints:
+• POST /api/auth/register - Request: {name, email, password} - Response: {success, message, token, userId}
+• POST /api/auth/login - Request: {email, password} - Response: {success, message, token, userId}
+
+Implementation: AuthService.kt defines suspend functions for async API calls → RetrofitClient.kt configures HTTP client singleton with 10-second timeout and Gson converter → all requests wrapped in lifecycleScope.launch { } to prevent UI blocking → responses parsed into AuthResponse data class → JWT token stored in SharedPreferences for session persistence → try-catch handles network errors with Toast user feedback → backend runs Spring Boot on port 8080 with H2 in-memory database.
+
+SUBMISSION INFO
+Commit: a92f51b | Repository: IT342_MedLink_G4_Sumarago | Branch: main | Files: 16 | Lines: 1191

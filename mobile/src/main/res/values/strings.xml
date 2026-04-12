@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">MedLink</string>
-    <string name="registration_title">Create Account</string>
-    <string name="login_title">Login</string>
-    <string name="dashboard_title">Dashboard</string>
-</resources>

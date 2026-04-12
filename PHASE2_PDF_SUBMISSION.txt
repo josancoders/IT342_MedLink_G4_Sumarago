@@ -1,0 +1,607 @@
+═══════════════════════════════════════════════════════════════════════════════
+IT342 PHASE 2 – MOBILE DEVELOPMENT
+MedLink Healthcare Management System
+═══════════════════════════════════════════════════════════════════════════════
+
+SUBMISSION DATE: April 12, 2026
+STUDENT: Josan Coders
+COURSE: IT342 - Software Development
+
+───────────────────────────────────────────────────────────────────────────────
+1. GITHUB REPOSITORY
+───────────────────────────────────────────────────────────────────────────────
+
+Repository Name: IT342_MedLink_G4_Sumarago
+Repository Link: https://github.com/josancoders/IT342_MedLink_G4_Sumarago
+Current Branch: main
+Visibility: Public
+
+───────────────────────────────────────────────────────────────────────────────
+2. FINAL COMMIT
+───────────────────────────────────────────────────────────────────────────────
+
+Commit Hash:    b05fb0e
+Commit Message: feat: Mobile Registration and Login Implementation
+Commit Date:    April 12, 2026
+Files Changed:  16 files
+Additions:      1191 lines of code
+
+Description:
+Complete mobile application (Android/Kotlin) with user registration and login
+functionality fully integrated with backend API endpoints.
+
+View Commit:
+https://github.com/josancoders/IT342_MedLink_G4_Sumarago/commit/b05fb0e
+
+───────────────────────────────────────────────────────────────────────────────
+3. MOBILE APPLICATION FEATURES
+───────────────────────────────────────────────────────────────────────────────
+
+✓ USER REGISTRATION
+  - Full name, email, password inputs
+  - Real-time input validation
+  - Password confirmation matching
+  - Email format validation (regex)
+  - Minimum 6 character password
+  - API integration with backend
+  - Success/error feedback with Toast messages
+  - Loading states during processing
+
+✓ USER LOGIN
+  - Email and password inputs
+  - Credential validation (email format, password length)
+  - Backend API authentication
+  - JWT token generation and storage
+  - Session management across app restarts
+  - Automatic redirect to dashboard if logged in
+  - Logout functionality with session clearing
+
+✓ DASHBOARD
+  - Welcome message with user's email
+  - Session persistence
+  - Logout button
+  - Foundation for future features
+
+✓ BACKEND INTEGRATION
+  - Retrofit 2 HTTP client
+  - Coroutines for async API calls
+  - Proper error handling
+  - Token-based authentication
+  - SharedPreferences for local storage
+
+───────────────────────────────────────────────────────────────────────────────
+4. HOW REGISTRATION WORKS
+───────────────────────────────────────────────────────────────────────────────
+
+REGISTRATION FLOW:
+
+1. USER INTERFACE
+   └─ User opens app → Registration screen
+   └─ Enters: Name, Email, Password, Confirm Password
+   └─ Clicks "Register" button
+
+2. CLIENT-SIDE VALIDATION (Kotlin)
+   └─ Name: Must be non-empty
+   └─ Email: Must match email regex pattern
+   └─ Password: Must be at least 6 characters
+   └─ Confirm Password: Must match password field
+   └─ If validation fails → Show error Toast message
+   └─ User corrects input and retries
+
+3. API REQUEST (Retrofit)
+   └─ Button state changes to "Registering..."
+   └─ Creates RegisterRequest with user data:
+      {
+        "name": "John Doe",
+        "email": "john@example.com",
+        "password": "password123"
+      }
+   └─ Sends POST request to: http://backend:8080/api/auth/register
+   └─ Uses Retrofit 2 + Coroutines for async call
+
+4. BACKEND PROCESSING (Spring Boot)
+   └─ AuthController receives POST request
+   └─ Validates input again (server-side validation)
+   └─ Queries database for existing email
+   └─ If email exists → Returns error "Email already exists"
+   └─ If email unique → Creates new User record
+   └─ Password is hashed using Spring Security BCrypt
+   └─ User record saved to database
+   └─ Returns AuthResponse:
+      {
+        "success": true,
+        "message": "User registered successfully",
+        "token": "jwt_token_xxxx",
+        "userId": 1
+      }
+
+5. RESPONSE HANDLING
+   └─ If response successful:
+      • Show "Registration successful! Please login."
+      • Clear form fields
+      • Navigate to LoginActivity
+   └─ If response failed:
+      • Display error message (e.g., "Email already exists")
+      • Re-enable register button for retry
+   └─ If network error:
+      • Display "Error: [exception message]"
+      • Re-enable register button for retry
+
+6. DATABASE RECORD CREATED
+   Table: user
+   ┌─────────────────────────────────────────────┐
+   │ id        │ 1                                │
+   │ name      │ John Doe                         │
+   │ email     │ john@example.com                 │
+   │ password  │ $2a$10$N9qo8uLOick... (hashed)  │
+   │ created_at│ 2026-04-12 14:30:00              │
+   └─────────────────────────────────────────────┘
+
+VALIDATION RULES:
+✓ Name: Required, non-empty
+✓ Email: Required, must be valid email format
+✓ Password: Required, minimum 6 characters
+✓ Confirm Password: Must match password field
+
+───────────────────────────────────────────────────────────────────────────────
+5. HOW LOGIN WORKS
+───────────────────────────────────────────────────────────────────────────────
+
+LOGIN FLOW:
+
+1. APP LAUNCH
+   └─ Check if user already logged in (token exists in SharedPreferences)
+   └─ If logged in → Skip to Dashboard
+   └─ If not logged in → Show Login screen
+
+2. USER INTERFACE
+   └─ User enters: Email, Password
+   └─ Clicks "Login" button
+
+3. CLIENT-SIDE VALIDATION (Kotlin)
+   └─ Email: Must match email regex pattern
+   └─ Password: Must be at least 6 characters
+   └─ If validation fails → Show error Toast message
+   └─ User corrects input and retries
+
+4. API REQUEST (Retrofit)
+   └─ Button state changes to "Logging in..."
+   └─ Creates LoginRequest:
+      {
+        "email": "john@example.com",
+        "password": "password123"
+      }
+   └─ Sends POST request to: http://backend:8080/api/auth/login
+   └─ Uses Retrofit 2 + Coroutines for async call
+
+5. BACKEND AUTHENTICATION (Spring Boot)
+   └─ AuthController receives POST request
+   └─ Validates input (server-side validation)
+   └─ Queries User table for email
+   └─ If user not found → Returns error "Invalid credentials"
+   └─ If user found:
+      • Compare provided password with stored hash
+      • Using Spring Security: passwordEncoder.matches()
+      • If password incorrect → Return "Invalid credentials"
+      • If password correct:
+        - Generate JWT token
+        - Return success AuthResponse with token and userId
+
+6. RESPONSE HANDLING
+   └─ If response successful:
+      • Save token to SharedPreferences (KEY_TOKEN)
+      • Save userId to SharedPreferences (KEY_USER_ID)
+      • Save email to SharedPreferences (KEY_EMAIL)
+      • Show "Login successful!"
+      • Navigate to DashboardActivity
+   └─ If response failed:
+      • Display "Login failed: Invalid credentials"
+      • Re-enable login button for retry
+   └─ If network error:
+      • Display error message
+      • Re-enable login button for retry
+
+7. SESSION MANAGEMENT
+   └─ Token persists across app restarts
+   └─ SharedPreferences stores:
+      • JWT Token (for authentication)
+      • User ID (for future API calls)
+      • User Email (for display)
+   └─ On app restart:
+      • Check if token exists (isLoggedIn() call)
+      • If token exists → Bypass login
+      • If no token → Show login screen
+
+8. DASHBOARD
+   └─ Welcome message displays email
+   └─ Full access to app features
+   └─ Logout button clears session
+
+VALIDATION RULES:
+✓ Email: Required, must be valid email format
+✓ Password: Required, minimum 6 characters
+✓ Server validates credentials against database
+✓ JWT token generated only on successful authentication
+
+───────────────────────────────────────────────────────────────────────────────
+6. API INTEGRATION USED
+───────────────────────────────────────────────────────────────────────────────
+
+HTTP CLIENT TECHNOLOGY:
+Framework: Retrofit 2.10.0
+JSON Parser: Gson
+HTTP Protocol: REST (Representational State Transfer)
+Async Framework: Kotlin Coroutines
+Base URL: http://192.168.1.100:8080 (configurable)
+
+RETROFIT CONFIGURATION:
+┌──────────────────────────────────────────────────────────────┐
+│ object RetrofitClient {                                      │
+│     private const val BASE_URL = "http://192.168.1.100:8080" │
+│     val retrofit = Retrofit.Builder()                        │
+│         .baseUrl(BASE_URL)                                   │
+│         .addConverterFactory(GsonConverterFactory.create())  │
+│         .build()                                             │
+│ }                                                            │
+└──────────────────────────────────────────────────────────────┘
+
+API ENDPOINTS:
+
+Registration Endpoint:
+├─ Method: POST
+├─ Path: /api/auth/register
+├─ Content-Type: application/json
+├─ Request Body:
+│  {
+│    "name": "John Doe",
+│    "email": "john@example.com",
+│    "password": "password123"
+│  }
+└─ Response (Success):
+   {
+     "success": true,
+     "message": "User registered successfully",
+     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+     "userId": 1
+   }
+
+Login Endpoint:
+├─ Method: POST
+├─ Path: /api/auth/login
+├─ Content-Type: application/json
+├─ Request Body:
+│  {
+│    "email": "john@example.com",
+│    "password": "password123"
+│  }
+└─ Response (Success):
+   {
+     "success": true,
+     "message": "Login successful",
+     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+     "userId": 1
+   }
+
+API SERVICE INTERFACE (Retrofit):
+┌──────────────────────────────────────────────────────────────┐
+│ interface AuthService {                                      │
+│     @POST("/api/auth/register")                              │
+│     suspend fun register(                                    │
+│         @Body request: RegisterRequest                       │
+│     ): Response<AuthResponse>                                │
+│                                                              │
+│     @POST("/api/auth/login")                                 │
+│     suspend fun login(                                       │
+│         @Body request: LoginRequest                          │
+│     ): Response<AuthResponse>                                │
+│ }                                                            │
+└──────────────────────────────────────────────────────────────┘
+
+DATA MODELS:
+├─ RegisterRequest: {name, email, password}
+├─ LoginRequest: {email, password}
+└─ AuthResponse: {success, message, token?, userId?}
+
+ERROR HANDLING:
+├─ Network Errors (IOException)
+│  └─ No internet: "Error: Unable to connect"
+├─ HTTP Errors (4xx, 5xx)
+│  ├─ 400 Bad Request: Invalid input
+│  ├─ 401 Unauthorized: Invalid credentials
+│  ├─ 409 Conflict: Email already exists
+│  └─ 500 Server Error: Server issue
+├─ Response Errors
+│  ├─ success: false → Show backend error message
+│  └─ token: null → Authentication failed
+└─ Validation Errors
+   └─ Client-side before API call
+
+LOCAL STORAGE (SharedPreferences):
+├─ Key: "auth_token" → JWT Token
+├─ Key: "user_id" → User ID
+├─ Key: "user_email" → User Email
+└─ Access: SharedPrefsManager class
+
+REQUEST/RESPONSE FLOW:
+┌────────────────────┐
+│  Mobile App        │
+│  (Kotlin/Android)  │
+└─────────┬──────────┘
+          │
+          │ REST API (Retrofit)
+          ↓
+┌────────────────────┐
+│  Spring Boot       │
+│  Backend           │
+└─────────┬──────────┘
+          │
+          │ JDBC
+          ↓
+┌────────────────────┐
+│  User Database     │
+│  (MySQL/Postgres)  │
+└────────────────────┘
+
+DEPENDENCIES:
+├─ Retrofit 2.10.0
+├─ OkHttp3 4.11.0
+├─ Gson 2.8.8
+├─ Coroutines 1.7.3
+├─ Material Design 1.11.0
+└─ AndroidX Core 1.12.0
+
+───────────────────────────────────────────────────────────────────────────────
+7. SCREENSHOTS REQUIRED
+───────────────────────────────────────────────────────────────────────────────
+
+SCREENSHOT 1: Registration Screen
+Description: Empty registration form with fields
+Contents:
+├─ "Create Account" title
+├─ Full Name field (empty)
+├─ Email field (empty)
+├─ Password field (empty, with toggle)
+├─ Confirm Password field (empty, with toggle)
+├─ Register button
+└─ "Already have an account? Login" link
+
+SCREENSHOT 2: Successful Registration
+Description: Registration success state
+Contents:
+├─ Toast message: "Registration successful! Please login."
+├─ Navigation to login screen
+└─ Confirmation that user was created
+
+SCREENSHOT 3: Login Screen
+Description: Empty login form
+Contents:
+├─ MedLink branding/logo
+├─ "Welcome Back" title
+├─ Email field (empty)
+├─ Password field (empty, with toggle)
+├─ Login button
+└─ "Don't have an account? Create one" link
+
+SCREENSHOT 4: Successful Login
+Description: Login success state
+Contents:
+├─ Toast message: "Login successful!"
+├─ Navigation to dashboard
+└─ Confirmation of authentication
+
+SCREENSHOT 5: After Login / Dashboard Screen
+Description: Logged-in user dashboard
+Contents:
+├─ Welcome message: "Welcome, user@example.com!"
+├─ Dashboard content area
+├─ Logout button
+└─ Navigation back to login on logout
+
+SCREENSHOT 6: Database Record
+Description: User table in backend database
+Contents:
+├─ User table name
+├─ Columns: id, name, email, password, created_at
+├─ Sample record:
+│  ├─ id: 1
+│  ├─ name: John Doe
+│  ├─ email: john@example.com
+│  ├─ password: $2a$10$...hashedPassword
+│  └─ created_at: 2026-04-12 14:30:00
+└─ Confirmation that record persisted
+
+───────────────────────────────────────────────────────────────────────────────
+8. TECHNOLOGIES SUMMARY
+───────────────────────────────────────────────────────────────────────────────
+
+MOBILE TECHNOLOGY STACK:
+├─ Language: Kotlin 1.9+
+├─ Framework: Android 34 (Target SDK)
+├─ Minimum API: Android 24 (7.0)
+├─ HTTP Client: Retrofit 2.10.0
+├─ Async Framework: Coroutines 1.7.3
+├─ UI Library: Material Design 3
+├─ JSON Parser: Gson
+├─ HTTP Library: OkHttp3 4.11.0
+└─ Storage: SharedPreferences
+
+BACKEND TECHNOLOGY STACK:
+├─ Framework: Spring Boot 3.5.11
+├─ Language: Java 17+
+├─ Web Framework: Spring Web
+├─ Security: Spring Security
+├─ Database: MySQL/PostgreSQL
+├─ API Type: REST
+├─ Authentication: JWT Tokens
+└─ Validation: Spring Validation
+
+DEVELOPMENT TOOLS:
+├─ IDE: Android Studio
+├─ Build System: Gradle
+├─ Version Control: Git
+├─ Repository: GitHub
+└─ Language Version: Kotlin 1
+
+───────────────────────────────────────────────────────────────────────────────
+9. PROJECT FILES CREATED
+───────────────────────────────────────────────────────────────────────────────
+
+KOTLIN FILES (3):
+├─ LoginActivity.kt
+├─ RegistrationActivity.kt
+└─ DashboardActivity.kt
+
+API INTEGRATION (2):
+├─ AuthService.kt (Retrofit interface)
+└─ RetrofitClient.kt (HTTP client configuration)
+
+DATA MODELS (1):
+└─ AuthModels.kt (Data classes)
+
+UTILITIES (1):
+└─ SharedPrefsManager.kt (Local storage management)
+
+XML LAYOUTS (3):
+├─ activity_login.xml
+├─ activity_registration.xml
+└─ activity_dashboard.xml
+
+DRAWABLE FILES (2):
+├─ button_background.xml (Blue login button)
+└─ button_background_logout.xml (Red logout button)
+
+CONFIGURATION FILES (2):
+├─ AndroidManifest.xml (Activities, permissions)
+└─ build.gradle.kts (Dependencies, build settings)
+
+DOCUMENTATION (2):
+├─ README.md (Complete documentation)
+└─ PHASE2_SUBMISSION.md (This summary)
+
+TOTAL: 16 files, 1191 lines of code
+
+───────────────────────────────────────────────────────────────────────────────
+10. TESTING CREDENTIALS
+───────────────────────────────────────────────────────────────────────────────
+
+Test Account 1:
+├─ Email: demo@medlink.com
+├─ Password: demo123456
+└─ Purpose: Demo/presentation
+
+Test Account 2:
+├─ Email: test@medlink.com
+├─ Password: test123456
+└─ Purpose: Testing
+
+How to Test:
+1. Open app → Registration screen
+2. Register new account with unique email
+3. Return to login screen
+4. Enter registered credentials
+5. Verify successful login and dashboard display
+6. Verify database record created
+
+───────────────────────────────────────────────────────────────────────────────
+11. DEVELOPMENT GUIDELINES FOLLOWED
+───────────────────────────────────────────────────────────────────────────────
+
+✓ CODE QUALITY
+├─ Kotlin best practices and conventions
+├─ Clean code principles
+├─ SOLID principles
+├─ Error handling and exceptions
+└─ Input validation (client + server)
+
+✓ SECURITY
+├─ Email format validation
+├─ Password strength validation (min 6 chars)
+├─ Server-side authentication
+├─ Password hashing (Spring Security BCrypt)
+├─ JWT token management
+└─ Session security
+
+✓ USER EXPERIENCE
+├─ Material Design 3 UI
+├─ Loading states for API calls
+├─ Toast messages for feedback
+├─ Navigation flow
+├─ Error messages
+└─ Success confirmations
+
+✓ ARCHITECTURE
+├─ Separation of concerns
+├─ API layer separated from UI
+├─ Utility layer for storage
+├─ Model layer for data
+└─ Clean architecture principles
+
+✓ GIT WORKFLOW
+├─ Meaningful commit messages
+├─ Single commit for Phase 2
+├─ Documented changes
+└─ Clear version history
+
+───────────────────────────────────────────────────────────────────────────────
+12. HOW TO ACCESS & RUN
+───────────────────────────────────────────────────────────────────────────────
+
+CLONE REPOSITORY:
+git clone https://github.com/josancoders/IT342_MedLink_G4_Sumarago.git
+
+SETUP IN ANDROID STUDIO:
+1. Open Android Studio
+2. File → Open → Select project folder
+3. Wait for Gradle sync
+4. Select mobile folder as build target
+
+CONFIGURATION:
+1. Update backend URL in RetrofitClient.kt:
+   private const val BASE_URL = "http://YOUR_IP:8080"
+2. Ensure backend is running on specified port
+3. Test connectivity from emulator/device
+
+BUILD & RUN:
+1. Select device or emulator
+2. Click Run button (▶️)
+3. App launches on selected device
+4. Login screen appears on first launch
+
+TEST FLOW:
+1. Create new account (Registration)
+2. Login with created credentials
+3. Verify welcome message on dashboard
+4. Check database for user record
+5. Logout and verify session cleared
+
+───────────────────────────────────────────────────────────────────────────────
+SUBMISSION CHECKLIST
+───────────────────────────────────────────────────────────────────────────────
+
+✅ Github Repository: https://github.com/josancoders/IT342_MedLink_G4_Sumarago
+✅ Commit Hash: b05fb0e
+✅ Final Commit Message: feat: Mobile Registration and Login Implementation
+✅ Code Quality: Kotlin best practices + SOLID principles
+✅ Registration Feature: Complete with validation
+✅ Login Feature: Complete with authentication
+✅ Backend Integration: Retrofit 2 + REST API
+✅ Error Handling: User-friendly messages
+✅ UI Design: Material Design 3
+✅ Database Integration: User records persisted
+✅ Session Management: Token storage
+✅ Documentation: Comprehensive README
+✅ Testing: Test credentials provided
+✅ Git Workflow: Clean commit history
+✅ Screenshots: 6 types identified
+✅ Summary Document: Complete (this document)
+
+═══════════════════════════════════════════════════════════════════════════════
+SUBMISSION READY FOR APPROVAL
+═══════════════════════════════════════════════════════════════════════════════
+
+Submission Date: April 12, 2026
+Repository: https://github.com/josancoders/IT342_MedLink_G4_Sumarago
+Commit: b05fb0e - feat: Mobile Registration and Login Implementation
+Status: ✅ COMPLETE AND READY
+
+═══════════════════════════════════════════════════════════════════════════════

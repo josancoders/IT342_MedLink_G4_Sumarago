@@ -65,9 +65,9 @@ export default function DoctorDetail() {
           <div className="dd-container">
             <div className="dd-card">
               <div className="dd-header-section">
-                <div className="dd-avatar">{doctor.name.split(' ').map(n => n[0]).join('')}</div>
+                <div className="dd-avatar">{doctor.fullName.split(' ').map(n => n[0]).join('')}</div>
                 <div className="dd-info">
-                  <h1>{doctor.name}</h1>
+                  <h1>{doctor.fullName}</h1>
                   <p className="dd-specialty">{doctor.specialization}</p>
                   <div className="dd-meta">
                     <span className="dd-fee">💰 ${doctor.consultationFee}/session</span>
@@ -81,41 +81,19 @@ export default function DoctorDetail() {
                 <p>{doctor.bio || 'Experienced healthcare professional with dedication to patient care.'}</p>
               </div>
 
-              <div className="dd-section">
-                <h3>Qualifications</h3>
-                <ul>
-                  <li>Board Certified {doctor.specialization}</li>
-                  <li>10+ Years Clinical Experience</li>
-                  <li>Published Researcher</li>
-                  <li>Member of Professional Medical Associations</li>
-                </ul>
-              </div>
-
-              <div className="dd-section">
-                <h3>Available Schedule</h3>
-                <div className="dd-schedule">
-                  <div className="dd-day">
-                    <span className="dd-day-name">Monday</span>
-                    <span className="dd-times">9:00 AM - 5:00 PM</span>
-                  </div>
-                  <div className="dd-day">
-                    <span className="dd-day-name">Tuesday</span>
-                    <span className="dd-times">9:00 AM - 5:00 PM</span>
-                  </div>
-                  <div className="dd-day">
-                    <span className="dd-day-name">Wednesday</span>
-                    <span className="dd-times">9:00 AM - 5:00 PM</span>
-                  </div>
-                  <div className="dd-day">
-                    <span className="dd-day-name">Thursday</span>
-                    <span className="dd-times">9:00 AM - 5:00 PM</span>
-                  </div>
-                  <div className="dd-day">
-                    <span className="dd-day-name">Friday</span>
-                    <span className="dd-times">9:00 AM - 5:00 PM</span>
-                  </div>
+              {doctor.education && (
+                <div className="dd-section">
+                  <h3>Education & Qualifications</h3>
+                  <p>{doctor.education}</p>
                 </div>
-              </div>
+              )}
+
+              {doctor.schedule && (
+                <div className="dd-section">
+                  <h3>Available Schedule</h3>
+                  <p>{doctor.schedule}</p>
+                </div>
+              )}
 
               <div className="dd-actions">
                 <Link to={`/book-appointment/${doctor.id}`} className="dd-btn-primary">Book Appointment</Link>
@@ -124,15 +102,10 @@ export default function DoctorDetail() {
             </div>
 
             <div className="dd-sidebar-right">
-              <div className="dd-rating-card">
-                <h4>Patient Reviews</h4>
-                <div className="dd-rating">⭐⭐⭐⭐⭐ 4.8/5</div>
-                <p>Based on 124 reviews</p>
-              </div>
               <div className="dd-contact-card">
-                <h4>Contact</h4>
-                <p>📧 {doctor.email}</p>
-                <p>📍 Medical Center, 123 Health St.</p>
+                <h4>Contact Information</h4>
+                <p>📧 {doctor.email || 'Not provided'}</p>
+                {doctor.phone && <p>📞 {doctor.phone}</p>}
               </div>
             </div>
           </div>

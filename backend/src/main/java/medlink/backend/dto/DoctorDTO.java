@@ -1,70 +1,39 @@
-package medlink.backend.entity;
+package medlink.backend.dto;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
 
-@Entity
-@Table(name = "doctors")
-public class Doctor {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class DoctorDTO {
     private Long id;
-
-    @OneToOne
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private User user;
-
-    @Column
-    private String specialization;
-
-    @Column(name = "consultation_fee", precision = 10, scale = 2)
-    private BigDecimal consultationFee;
-
-    @Column(columnDefinition = "TEXT")
-    private String bio;
-
-    @Column
+    private String fullName;
+    private String email;
     private String phone;
-
-    @Column
+    private String specialization;
+    private BigDecimal consultationFee;
     private String location;
-
-    @Column
     private String languages;
-
-    @Column
     private String education;
-
-    @Column(columnDefinition = "TEXT")
+    private String bio;
     private String availableSchedule;
 
-    public Doctor() {}
-
-    public Doctor(User user, String specialization, BigDecimal consultationFee, String bio) {
-        this.user = user;
-        this.specialization = specialization;
-        this.consultationFee = consultationFee;
-        this.bio = bio;
-    }
+    public DoctorDTO() {}
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 
     public String getSpecialization() { return specialization; }
     public void setSpecialization(String specialization) { this.specialization = specialization; }
 
     public BigDecimal getConsultationFee() { return consultationFee; }
     public void setConsultationFee(BigDecimal consultationFee) { this.consultationFee = consultationFee; }
-
-    public String getBio() { return bio; }
-    public void setBio(String bio) { this.bio = bio; }
-
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
 
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
@@ -74,6 +43,9 @@ public class Doctor {
 
     public String getEducation() { return education; }
     public void setEducation(String education) { this.education = education; }
+
+    public String getBio() { return bio; }
+    public void setBio(String bio) { this.bio = bio; }
 
     public String getAvailableSchedule() { return availableSchedule; }
     public void setAvailableSchedule(String availableSchedule) { this.availableSchedule = availableSchedule; }

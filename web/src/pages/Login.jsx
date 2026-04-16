@@ -23,7 +23,15 @@ export default function Login() {
       const res = await loginUser(form);
       if (res.data.success) {
         localStorage.setItem('user', JSON.stringify(res.data));
-        navigate('/dashboard');
+        localStorage.setItem('token', res.data.token);
+        // Redirect based on user role
+        if (res.data.role === 'ADMIN') {
+          navigate('/admin');
+        } else if (res.data.role === 'DOCTOR') {
+          navigate('/doctor');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         setError(res.data.message);
       }
@@ -42,7 +50,15 @@ export default function Login() {
       const res = await googleLogin(credentialResponse.credential);
       if (res.data.success) {
         localStorage.setItem('user', JSON.stringify(res.data));
-        navigate('/dashboard');
+        localStorage.setItem('token', res.data.token);
+        // Redirect based on user role
+        if (res.data.role === 'ADMIN') {
+          navigate('/admin');
+        } else if (res.data.role === 'DOCTOR') {
+          navigate('/doctor');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         setError(res.data.message);
       }

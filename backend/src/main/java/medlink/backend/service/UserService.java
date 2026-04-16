@@ -5,6 +5,7 @@ import medlink.backend.dto.LoginRequest;
 import medlink.backend.dto.RegisterRequest;
 import medlink.backend.entity.User;
 import medlink.backend.repository.UserRepository;
+import medlink.backend.util.JwtProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,14 +19,16 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final JwtProvider jwtProvider;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${google.client-id}")
     private String googleClientId;
 
-    public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, JwtProvider jwtProvider) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtProvider = jwtProvider;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -39,8 +42,11 @@ public class UserService {
 
         User user = new User(request.getName(), request.getEmail(), hashedPassword);
         User saved = userRepository.save(user);
+        
+        // Generate JWT token
+        String token = jwtProvider.generateToken(saved.getEmail());
 
-        return new AuthResponse(true, "Registration successful.", saved.getId(), saved.getFullName(), saved.getEmail());
+        return new AuthResponse(true, "Registration successful.", saved.getId(), saved.getFullName(), saved.getEmail(), saved.getRole(), token);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -62,7 +68,10 @@ public class UserService {
             return new AuthResponse(false, "Invalid email or password.");
         }
 
-        return new AuthResponse(true, "Login successful.", user.getId(), user.getFullName(), user.getEmail());
+        // Generate JWT token
+        String token = jwtProvider.generateToken(user.getEmail());
+
+        return new AuthResponse(true, "Login successful.", user.getId(), user.getFullName(), user.getEmail(), user.getRole(), token);
     }
 
     @SuppressWarnings("unchecked")
@@ -101,9 +110,16 @@ public class UserService {
                 user = userRepository.save(newUser);
             }
 
-            return new AuthResponse(true, "Google login successful.", user.getId(), user.getFullName(), user.getEmail());
+            // Generate JWT token
+            String token = jwtProvider.generateToken(user.getEmail());
+
+            return new AuthResponse(true, "Google login successful.", user.getId(), user.getFullName(), user.getEmail(), user.getRole(), token);
         } catch (Exception e) {
             return new AuthResponse(false, "Google authentication failed: " + e.getMessage());
         }
+    }
+
+    public String encodePassword(String rawPassword) {
+        return passwordEncoder.encode(rawPassword);
     }
 }

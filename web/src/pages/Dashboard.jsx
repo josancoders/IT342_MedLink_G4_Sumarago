@@ -27,7 +27,9 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState(null);
+  const [doctors, setDoctors] = useState([]);
   const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -35,11 +37,27 @@ export default function Dashboard() {
       navigate('/login');
     } else {
       setUser(JSON.parse(stored));
+      fetchDoctors();
     }
   }, [navigate]);
 
+  const fetchDoctors = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/doctors');
+      if (response.ok) {
+        const data = await response.json();
+        setDoctors(data);
+      }
+    } catch (error) {
+      console.error('Error fetching doctors:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
     navigate('/login');
   };
 
@@ -112,28 +130,42 @@ export default function Dashboard() {
               {/* Recommended Doctors */}
               <div className="db-section-header">
                 <h3 className="db-section-title">Recommended Doctors</h3>
-                <a href="#" className="db-view-all">View All →</a>
+                <a href="/find-doctors" className="db-view-all">View All →</a>
               </div>
 
               <div className="db-doctor-cards">
-                {RECOMMENDED_DOCTORS.map(doc => (
-                  <div key={doc.id} className="db-doctor-card">
-                    <div className="db-doc-top">
-                      <div className="db-doc-avatar" style={{ background: doc.color }}>
-                        {doc.initials}
+                {loading ? (
+                  <p>Loading doctors...</p>
+                ) : doctors.length === 0 ? (
+                  <p>No doctors available.</p>
+                ) : (
+                  doctors.slice(0, 3).map(doc => {
+                    const colors = ['#dbeafe', '#fef3c7', '#ede9fe', '#dcfce7'];
+                    const initials = doc.fullName?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'D';
+                    return (
+                      <div key={doc.id} className="db-doctor-card">
+                        <div className="db-doc-top">
+                          <div className="db-doc-avatar" style={{ background: colors[doc.id % colors.length] }}>
+                            {initials}
+                          </div>
+                          <div>
+                            <p className="db-doc-name">{doc.fullName}</p>
+                            <p className="db-doc-spec">{doc.specialization}</p>
+                          </div>
+                        </div>
+                        <div className="db-doc-meta">
+                          <span className="db-doc-fee">${doc.consultationFee}</span>
+                        </div>
+                        <button 
+                          className="db-book-btn"
+                          onClick={() => navigate(`/book-appointment/${doc.id}`)}
+                        >
+                          Book an appointment
+                        </button>
                       </div>
-                      <div>
-                        <p className="db-doc-name">{doc.name}</p>
-                        <p className="db-doc-spec">{doc.specialty} · {doc.exp}</p>
-                      </div>
-                    </div>
-                    <div className="db-doc-meta">
-                      <span className="db-doc-schedule">🕐 {doc.schedule}</span>
-                      <span className="db-doc-fee">${doc.fee}</span>
-                    </div>
-                    <button className="db-book-btn">Book an appointment</button>
-                  </div>
-                ))}
+                    );
+                  })
+                )}
               </div>
             </div>
 

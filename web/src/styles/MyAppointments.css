@@ -1,0 +1,37 @@
+/* My Appointments */
+.ma-root { display: flex; height: 100vh; font-family: 'Inter', 'Segoe UI', sans-serif; background: #f4f6fb; }
+.ma-sidebar { width: 200px; min-width: 200px; background: #fff; display: flex; flex-direction: column; padding: 24px 0; box-shadow: 1px 0 0 #e5e7eb; z-index: 10; }
+.ma-logo { font-size: 22px; font-weight: 800; color: #2563eb; padding: 0 24px 28px; letter-spacing: -0.5px; }
+.ma-nav { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.ma-nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 24px; font-size: 14px; color: #374151; text-decoration: none; border-radius: 0; transition: background 0.15s; font-weight: 500; }
+.ma-nav-item:hover { background: #f0f4ff; color: #2563eb; }
+.ma-nav-item.active { background: #eff6ff; color: #2563eb; border-left: 3px solid #2563eb; font-weight: 600; }
+.ma-logout { margin: 16px; padding: 10px 14px; background: #fff; border: 1.5px solid #fca5a5; color: #ef4444; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; text-align: left; transition: background 0.15s; }
+.ma-logout:hover { background: #fef2f2; }
+.ma-main { flex: 1; display: flex; flex-direction: column; }
+.ma-header { background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; border-bottom: 1px solid #e5e7eb; gap: 16px; }
+.ma-search { flex: 1; max-width: 320px; }
+.ma-avatar { width: 36px; height: 36px; border-radius: 50%; background: #2563eb; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.ma-username { font-size: 14px; font-weight: 600; color: #111827; white-space: nowrap; }
+.ma-content { flex: 1; overflow-y: auto; padding: 30px; }
+.ma-tabs { display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #ddd; }
+.ma-tab { padding: 12px 20px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 14px; font-weight: 600; color: #666; transition: all 0.3s; }
+.ma-tab:hover { color: #2563eb; }
+.ma-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+.ma-error { background: #fee2e2; color: #991b1b; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+.ma-loading, .ma-empty { text-align: center; padding: 40px; color: #666; }
+.ma-btn-book { display: inline-block; padding: 10px 20px; background: #2563eb; color: white; text-decoration: none; border-radius: 6px; margin-top: 15px; }
+.ma-list { display: flex; flex-direction: column; gap: 15px; }
+.ma-appointment { display: flex; gap: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); align-items: center; }
+.ma-apt-left { min-width: 80px; text-align: center; }
+.ma-date { background: #2563eb; color: white; border-radius: 8px; padding: 10px; }
+.ma-day { font-size: 24px; font-weight: bold; }
+.ma-month { font-size: 12px; }
+.ma-apt-middle { flex: 1; }
+.ma-apt-middle h4 { font-size: 16px; margin: 0 0 5px 0; }
+.ma-specialty { color: #2563eb; font-size: 13px; margin: 5px 0; }
+.ma-time, .ma-reason { color: #666; font-size: 13px; margin: 5px 0; }
+.ma-apt-right { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+.ma-status { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; color: white; }
+.ma-btn-cancel { padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
+.ma-btn-cancel:hover { background: #dc2626; }

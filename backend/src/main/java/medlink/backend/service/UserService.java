@@ -8,6 +8,7 @@ import medlink.backend.repository.UserRepository;
 import medlink.backend.util.JwtProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -71,7 +72,10 @@ public class UserService {
         // Generate JWT token
         String token = jwtProvider.generateToken(user.getEmail());
 
-        return new AuthResponse(true, "Login successful.", user.getId(), user.getFullName(), user.getEmail(), user.getRole(), token);
+        AuthResponse response = new AuthResponse(true, "Login successful.", user.getId(), user.getFullName(), user.getEmail(), user.getRole(), token);
+        // Set firstLogin flag if user requires password change
+        response.setFirstLogin(user.getRequiresPasswordChange() != null && user.getRequiresPasswordChange());
+        return response;
     }
 
     @SuppressWarnings("unchecked")
@@ -121,5 +125,29 @@ public class UserService {
 
     public String encodePassword(String rawPassword) {
         return passwordEncoder.encode(rawPassword);
+    }
+
+    public AuthResponse changePassword(String newPassword) {
+        try {
+            // Get current user from security context
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            
+            Optional<User> optionalUser = userRepository.findByEmail(email);
+            if (optionalUser.isEmpty()) {
+                return new AuthResponse(false, "User not found.");
+            }
+
+            User user = optionalUser.get();
+            
+            // Update password
+            String hashedPassword = passwordEncoder.encode(newPassword);
+            user.setPasswordHash(hashedPassword);
+            user.setRequiresPasswordChange(false); // Mark password as changed
+            userRepository.save(user);
+
+            return new AuthResponse(true, "Password changed successfully.");
+        } catch (Exception e) {
+            return new AuthResponse(false, "Failed to change password: " + e.getMessage());
+        }
     }
 }

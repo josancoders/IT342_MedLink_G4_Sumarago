@@ -85,6 +85,7 @@ public class DoctorController {
                     doctor.setLanguages(doctorDTO.getLanguages() != null ? doctorDTO.getLanguages() : "");
                     doctor.setEducation(doctorDTO.getEducation() != null ? doctorDTO.getEducation() : "");
                     doctor.setBio(doctorDTO.getBio() != null ? doctorDTO.getBio() : "");
+                    doctor.setAvailableSchedule(doctorDTO.getAvailableSchedule() != null ? doctorDTO.getAvailableSchedule() : "");
                     
                     Doctor saved = doctorRepository.save(doctor);
                     return ResponseEntity.ok(convertToDTO(saved));
@@ -104,6 +105,7 @@ public class DoctorController {
                     if (doctorDTO.getLanguages() != null) doctor.setLanguages(doctorDTO.getLanguages());
                     if (doctorDTO.getEducation() != null) doctor.setEducation(doctorDTO.getEducation());
                     if (doctorDTO.getBio() != null) doctor.setBio(doctorDTO.getBio());
+                    if (doctorDTO.getAvailableSchedule() != null) doctor.setAvailableSchedule(doctorDTO.getAvailableSchedule());
                     Doctor updated = doctorRepository.save(doctor);
                     return ResponseEntity.ok(convertToDTO(updated));
                 })

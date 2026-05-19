@@ -26,6 +26,9 @@ public class User {
     @Column(nullable = false)
     private String role = "PATIENT";
 
+    @Column(name = "requires_password_change")
+    private Boolean requiresPasswordChange = false;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -73,6 +76,9 @@ public class User {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public Boolean getRequiresPasswordChange() { return requiresPasswordChange; }
+    public void setRequiresPasswordChange(Boolean requiresPasswordChange) { this.requiresPasswordChange = requiresPasswordChange; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

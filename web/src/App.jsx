@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Register from './pages/Register';
 import Login from './pages/Login';
+import DoctorLogin from './pages/DoctorLogin';
 import Dashboard from './pages/Dashboard';
 import FindDoctors from './pages/FindDoctors';
 import DoctorDetail from './pages/DoctorDetail';
@@ -24,6 +25,7 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/doctor/login" element={<DoctorLogin />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/doctor" element={<DoctorDashboard />} />

@@ -104,6 +104,16 @@ public class AdminController {
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(404).body(new AuthResponse(false, "User not found"));
         }
+
+        User user = userOpt.get();
+        
+        // If user is a doctor, delete the associated doctor profile first
+        if ("DOCTOR".equals(user.getRole())) {
+            Optional<Doctor> doctorOpt = doctorRepository.findByUser(user);
+            if (doctorOpt.isPresent()) {
+                doctorRepository.delete(doctorOpt.get());
+            }
+        }
         
         userRepository.deleteById(id);
         return ResponseEntity.ok(new AuthResponse(true, "User deleted successfully"));
@@ -125,6 +135,7 @@ public class AdminController {
             userService.encodePassword(request.getPassword()),
             "DOCTOR"
         );
+        doctor.setRequiresPasswordChange(true); // Require password change on first login
         
         User savedDoctor = userRepository.save(doctor);
         

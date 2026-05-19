@@ -9,6 +9,7 @@ export default function DoctorUploadPrescription() {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [uploadLoading, setUploadLoading] = useState(true);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -27,7 +28,7 @@ export default function DoctorUploadPrescription() {
   const fetchAppointments = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/appointments', {
+      const response = await fetch('http://localhost:8080/api/appointments/doctor/my-appointments', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -40,16 +41,30 @@ export default function DoctorUploadPrescription() {
       }
     } catch (error) {
       console.error('Error fetching appointments:', error);
+    } finally {
+      setUploadLoading(false);
     }
   };
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
-      // Validate file type
-      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+      // Validate file type - accept common document and image formats
+      const allowedTypes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/plain',
+        'text/csv'
+      ];
       if (!allowedTypes.includes(selectedFile.type)) {
-        setMessage('❌ Please upload a PDF or image file (JPG, PNG)');
+        setMessage('❌ Please upload a valid file (PDF, Images, Documents, Spreadsheets, Text)');
         return;
       }
       // Validate file size (max 5MB)
@@ -76,6 +91,7 @@ export default function DoctorUploadPrescription() {
     }
 
     setLoading(true);
+    setMessage('');
 
     try {
       const token = localStorage.getItem('token');
@@ -96,6 +112,8 @@ export default function DoctorUploadPrescription() {
         setFile(null);
         setSelectedAppointment('');
         document.querySelector('input[type="file"]').value = '';
+        // Keep success message for 3 seconds
+        setTimeout(() => setMessage(''), 3000);
       } else {
         setMessage('❌ Failed to upload prescription');
       }
@@ -108,121 +126,303 @@ export default function DoctorUploadPrescription() {
   };
 
   return (
-    <div style={{ padding: '30px', backgroundColor: '#f5f7fa', minHeight: '100vh' }}>
-      <button 
-        onClick={() => navigate('/doctor')}
-        style={{ marginBottom: '20px', padding: '10px 20px', backgroundColor: '#3B82F6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-      >
-        ← Back to Dashboard
-      </button>
-
-      <div style={{ maxWidth: '600px', margin: '0 auto', backgroundColor: 'white', padding: '40px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <h1 style={{ marginTop: 0, color: '#1a202c' }}>💊 Upload Prescription</h1>
-
-        <form onSubmit={handleUpload}>
-          {/* Appointment Selection */}
-          <div style={{ marginBottom: '25px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#374151' }}>
-              Select Completed Appointment
-            </label>
-            <select
-              value={selectedAppointment}
-              onChange={(e) => setSelectedAppointment(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '6px',
-                border: '1px solid #d1d5db',
-                fontSize: '14px',
-                backgroundColor: 'white',
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f5f7fa' }}>
+      {/* Sidebar */}
+      <div style={{ width: '280px', backgroundColor: '#ffffff', borderRight: '1px solid #e5e7eb', padding: '30px 0' }}>
+        <h2 style={{ padding: '0 20px', margin: '0 0 30px 0', fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>🏥 MedLink</h2>
+        <nav>
+          {[
+            { label: 'Dashboard', path: '/doctor', icon: '⊞' },
+            { label: 'Appointments', path: '/doctor/appointments', icon: '📋' },
+            { label: 'Upload Prescription', path: '/doctor/upload-prescription', icon: '💊' },
+          ].map((link, i) => (
+            <a
+              key={i}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate(link.path);
               }}
-            >
-              <option value="">-- Choose an appointment --</option>
-              {appointments.map((apt) => (
-                <option key={apt.id} value={apt.id}>
-                  Patient #{apt.patientId} - {new Date(apt.appointmentDate).toLocaleDateString()} at {apt.timeSlot}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* File Upload */}
-          <div style={{ marginBottom: '25px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#374151' }}>
-              Upload Prescription File
-            </label>
-            <div
               style={{
-                border: '2px dashed #3B82F6',
-                borderRadius: '8px',
-                padding: '30px',
-                textAlign: 'center',
-                backgroundColor: '#f0f9ff',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '12px 20px',
+                color: window.location.pathname === link.path ? '#3B82F6' : '#6b7280',
+                textDecoration: 'none',
                 cursor: 'pointer',
-              }}
-              onClick={() => document.querySelector('input[type="file"]').click()}
-            >
-              <div style={{ fontSize: '24px', marginBottom: '10px' }}>📤</div>
-              <p style={{ margin: '0 0 5px 0', fontWeight: 600, color: '#1e40af' }}>
-                {file ? file.name : 'Click to select file or drag and drop'}
-              </p>
-              <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>
-                PDF, JPG, PNG (Max 5MB)
-              </p>
-              <input
-                type="file"
-                onChange={handleFileChange}
-                accept=".pdf,.jpg,.jpeg,.png"
-                style={{ display: 'none' }}
-              />
-            </div>
-          </div>
-
-          {/* Message */}
-          {message && (
-            <div
-              style={{
-                padding: '12px',
-                marginBottom: '20px',
-                borderRadius: '6px',
-                backgroundColor: message.includes('✅') ? '#d1fae5' : '#fee2e2',
-                color: message.includes('✅') ? '#065f46' : '#991b1b',
+                borderLeft: window.location.pathname === link.path ? '3px solid #3B82F6' : '3px solid transparent',
+                backgroundColor: window.location.pathname === link.path ? '#eff6ff' : 'transparent',
+                fontWeight: window.location.pathname === link.path ? 600 : 500,
                 fontSize: '14px',
+                transition: 'all 0.2s',
               }}
             >
-              {message}
-            </div>
-          )}
+              <span style={{ marginRight: '12px', fontSize: '16px' }}>{link.icon}</span>
+              {link.label}
+            </a>
+          ))}
+        </nav>
+        <button
+          onClick={() => {
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            navigate('/login');
+          }}
+          style={{
+            position: 'absolute',
+            bottom: '20px',
+            left: '20px',
+            padding: '10px 16px',
+            backgroundColor: '#ef4444',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontWeight: 600,
+            fontSize: '13px',
+            width: 'auto',
+          }}
+        >
+          🚪 Logout
+        </button>
+      </div>
 
-          {/* Submit Button */}
+      {/* Main Content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* Top Bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', padding: '16px 30px', borderBottom: '1px solid #e5e7eb' }}>
+          <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#0f172a' }}>💊 Upload Prescription</h1>
           <button
-            type="submit"
-            disabled={loading || !selectedAppointment || !file}
+            onClick={() => navigate('/doctor')}
             style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: !selectedAppointment || !file || loading ? '#d1d5db' : '#3B82F6',
+              padding: '10px 20px',
+              backgroundColor: '#3B82F6',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
+              cursor: 'pointer',
               fontWeight: 600,
-              cursor: !selectedAppointment || !file || loading ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
+              fontSize: '13px',
             }}
           >
-            {loading ? 'Uploading...' : '✅ Upload Prescription'}
+            ← Back to Dashboard
           </button>
-        </form>
+        </div>
 
-        {/* Info Box */}
-        <div style={{ marginTop: '30px', padding: '15px', backgroundColor: '#f3f4f6', borderRadius: '6px', fontSize: '13px', color: '#374151' }}>
-          <p style={{ margin: '0 0 8px 0', fontWeight: 600 }}>📋 Requirements:</p>
-          <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
-            <li>Select a completed appointment</li>
-            <li>Upload prescription as PDF or image (JPG/PNG)</li>
-            <li>File size must be under 5MB</li>
-            <li>Patient will download the prescription from their account</li>
-          </ul>
+        {/* Content - Split Layout */}
+        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+          {/* Left Side - Completed Appointments */}
+          <div style={{ flex: 1, padding: '30px', overflowY: 'auto', borderRight: '1px solid #e5e7eb' }}>
+            <h2 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: 600, color: '#0f172a' }}>📋 Completed Appointments</h2>
+
+            {uploadLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                <p>Loading appointments...</p>
+              </div>
+            ) : appointments.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', backgroundColor: '#ffffff', borderRadius: '8px', color: '#6b7280' }}>
+                <p>No completed appointments found.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {appointments.map((apt) => (
+                  <div
+                    key={apt.id}
+                    onClick={() => setSelectedAppointment(apt.id)}
+                    style={{
+                      backgroundColor: selectedAppointment == apt.id ? '#eff6ff' : 'white',
+                      borderRadius: '8px',
+                      padding: '20px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                      border: selectedAppointment == apt.id ? '2px solid #3B82F6' : '1px solid #e5e7eb',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 600, color: '#0f172a' }}>
+                      {apt.patientName || 'Unknown Patient'}
+                    </h3>
+                    <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#6b7280' }}>
+                      📅 {new Date(apt.appointmentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · ⏰ {apt.timeSlot}
+                    </p>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#6b7280' }}>
+                      📝 {apt.reason || 'General Checkup'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Right Side - Upload Form */}
+          <div style={{ width: '450px', padding: '30px', overflowY: 'auto', backgroundColor: '#fafbfc' }}>
+            <h2 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>📤 Upload File</h2>
+            <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#6b7280' }}>Select an appointment from the left</p>
+
+            <form onSubmit={handleUpload}>
+              {/* Selected Appointment Display */}
+              {selectedAppointment && (
+                <div style={{ marginBottom: '25px', padding: '12px', backgroundColor: '#dbeafe', borderRadius: '6px', border: '1px solid #0284c7' }}>
+                  <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#0c4a6e' }}>
+                    ✓ Selected: {appointments.find(a => a.id == selectedAppointment)?.patientName}
+                  </p>
+                </div>
+              )}
+
+              {/* File Upload */}
+              <div style={{ marginBottom: '25px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#374151', fontSize: '14px' }}>
+                  Upload Prescription File
+                </label>
+                {file ? (
+                  <div style={{ marginBottom: '12px', padding: '12px', backgroundColor: '#f0fdf4', borderRadius: '6px', border: '1px solid #86efac', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '18px' }}>📄</span>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 600, color: '#16a34a', fontSize: '14px' }}>{file.name}</p>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#6b7280' }}>Size: {(file.size / 1024).toFixed(2)} KB</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFile(null);
+                        document.querySelector('input[type="file"]').value = '';
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                      }}
+                    >
+                      ✕ Remove
+                    </button>
+                  </div>
+                ) : null}
+                <div
+                  style={{
+                    border: '2px dashed #3B82F6',
+                    borderRadius: '8px',
+                    padding: '30px',
+                    textAlign: 'center',
+                    backgroundColor: '#f0f9ff',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => document.querySelector('input[type="file"]').click()}
+                >
+                  <div style={{ fontSize: '24px', marginBottom: '10px' }}>📤</div>
+                  <p style={{ margin: '0 0 5px 0', fontWeight: 600, color: '#1e40af' }}>
+                    {file ? 'Click to change file' : 'Click to select file or drag and drop'}
+                  </p>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>
+                    PDF, Images (JPG, PNG, GIF), Documents (DOC, DOCX), Spreadsheets (XLS, XLSX), Text - Max 5MB
+                  </p>
+                  <input
+                    type="file"
+                    onChange={handleFileChange}
+                    accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx,.xls,.xlsx,.txt,.csv"
+                    style={{ display: 'none' }}
+                  />
+                </div>
+              </div>
+
+              {/* Message */}
+              {message && (
+                <div
+                  style={{
+                    padding: '16px',
+                    marginBottom: '20px',
+                    borderRadius: '6px',
+                    backgroundColor: message.includes('✅') ? '#d1fae5' : '#fee2e2',
+                    color: message.includes('✅') ? '#065f46' : '#991b1b',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  {message}
+                </div>
+              )}
+
+              {/* Loading Indicator */}
+              {loading && (
+                <div
+                  style={{
+                    padding: '16px',
+                    marginBottom: '20px',
+                    borderRadius: '6px',
+                    backgroundColor: '#dbeafe',
+                    color: '#0369a1',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite', fontSize: '16px' }}>⏳</span>
+                  Uploading your prescription... Please wait
+                </div>
+              )}
+
+              <style>{`
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              `}</style>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading || !selectedAppointment || !file}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  backgroundColor: loading ? '#9ca3af' : (selectedAppointment && file ? '#3B82F6' : '#d1d5db'),
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: (loading || !selectedAppointment || !file) ? 'not-allowed' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {loading ? (
+                  <>
+                    <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>⏳</span>
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    ✅ Upload Prescription
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Requirements */}
+            <div style={{ marginTop: '30px', padding: '16px', backgroundColor: '#f3f4f6', borderRadius: '6px' }}>
+              <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: 600, color: '#374151' }}>📋 Requirements:</h4>
+              <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: '#6b7280', lineHeight: '1.8' }}>
+                <li>Select a completed appointment</li>
+                <li>Upload prescription file</li>
+                <li>File size must be under 5MB</li>
+                <li>Patient will download the prescription from their account</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>

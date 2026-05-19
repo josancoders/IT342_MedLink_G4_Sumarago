@@ -9,6 +9,7 @@ public class AuthResponse {
     private String email;
     private String role;
     private String token;
+    private Boolean firstLogin = false;
 
     public AuthResponse(boolean success, String message) {
         this.success = success;
@@ -62,4 +63,7 @@ public class AuthResponse {
 
     public String getToken() { return token; }
     public void setToken(String token) { this.token = token; }
+
+    public Boolean getFirstLogin() { return firstLogin; }
+    public void setFirstLogin(Boolean firstLogin) { this.firstLogin = firstLogin; }
 }

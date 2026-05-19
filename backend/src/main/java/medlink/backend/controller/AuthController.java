@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -65,6 +67,20 @@ public class AuthController {
         AuthResponse response = userService.googleLogin(idToken);
         if (!response.isSuccess()) {
             return ResponseEntity.status(401).body(response);
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<AuthResponse> changePassword(@RequestBody Map<String, String> body) {
+        String newPassword = body.get("newPassword");
+        if (newPassword == null || newPassword.isBlank()) {
+            return ResponseEntity.badRequest().body(new AuthResponse(false, "New password is required."));
+        }
+
+        AuthResponse response = userService.changePassword(newPassword);
+        if (!response.isSuccess()) {
+            return ResponseEntity.badRequest().body(response);
         }
         return ResponseEntity.ok(response);
     }

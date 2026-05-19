@@ -9,6 +9,7 @@ export default function DoctorProfile() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState('');
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -21,13 +22,20 @@ export default function DoctorProfile() {
     bio: '',
   });
   const [schedule, setSchedule] = useState({
-    Monday: [],
-    Tuesday: [],
-    Wednesday: [],
-    Thursday: [],
-    Friday: [],
+    Sunday: { open: '', close: '', available: false, breaks: [] },
+    Monday: { open: '', close: '', available: true, breaks: [] },
+    Tuesday: { open: '', close: '', available: true, breaks: [] },
+    Wednesday: { open: '', close: '', available: true, breaks: [] },
+    Thursday: { open: '', close: '', available: true, breaks: [] },
+    Friday: { open: '', close: '', available: true, breaks: [] },
+    Saturday: { open: '', close: '', available: false, breaks: [] },
   });
-  const [newTimeSlot, setNewTimeSlot] = useState('');
+  const [breakModal, setBreakModal] = useState({
+    isOpen: false,
+    day: null,
+    breakStart: '',
+    breakEnd: '',
+  });
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -79,11 +87,13 @@ export default function DoctorProfile() {
           } catch (e) {
             console.log('Could not parse schedule');
             setSchedule({
-              Monday: [],
-              Tuesday: [],
-              Wednesday: [],
-              Thursday: [],
-              Friday: [],
+              Sunday: { open: '', close: '', available: false, breaks: [] },
+              Monday: { open: '', close: '', available: true, breaks: [] },
+              Tuesday: { open: '', close: '', available: true, breaks: [] },
+              Wednesday: { open: '', close: '', available: true, breaks: [] },
+              Thursday: { open: '', close: '', available: true, breaks: [] },
+              Friday: { open: '', close: '', available: true, breaks: [] },
+              Saturday: { open: '', close: '', available: false, breaks: [] },
             });
           }
         }
@@ -136,6 +146,8 @@ export default function DoctorProfile() {
 
   const handleSave = async () => {
     try {
+      setSaving(true);
+      setMessage('');
       const token = localStorage.getItem('token');
       const updateData = {
         specialization: formData.specialization || null,
@@ -148,7 +160,7 @@ export default function DoctorProfile() {
         availableSchedule: JSON.stringify(schedule),
       };
 
-      console.log('Saving profile...');
+      console.log('Saving profile with schedule:', schedule);
 
       let response;
       
@@ -179,38 +191,82 @@ export default function DoctorProfile() {
       console.log('Response status:', response.status);
 
       if (response.ok) {
-        setMessage('Profile updated successfully! ✅');
+        setMessage('✅ Profile saved successfully! Your schedule has been updated.');
         setEditing(false);
+        setSaving(false);
         fetchDoctorProfile(user.userId);
-        setTimeout(() => setMessage(''), 3000);
+        setTimeout(() => setMessage(''), 5000);
       } else {
         const errorText = await response.text();
         console.error('Error response:', errorText);
-        setMessage('Failed to update profile: ' + response.status);
+        setMessage('❌ Failed to save profile: ' + response.status + '. Please try again.');
+        setSaving(false);
       }
     } catch (error) {
       console.error('Error saving profile:', error);
-      setMessage('Error: ' + error.message);
+      setMessage('❌ Error: ' + error.message);
+      setSaving(false);
     }
   };
 
-  const handleAddTimeSlot = (day) => {
-    if (!newTimeSlot.trim()) return;
+  const handleScheduleChange = (day, field, value) => {
     const updatedSchedule = { ...schedule };
-    if (!updatedSchedule[day]) {
-      updatedSchedule[day] = [];
-    }
-    if (!updatedSchedule[day].includes(newTimeSlot)) {
-      updatedSchedule[day].push(newTimeSlot);
-      updatedSchedule[day].sort();
-      setSchedule(updatedSchedule);
-      setNewTimeSlot('');
-    }
+    updatedSchedule[day] = { ...updatedSchedule[day], [field]: value };
+    setSchedule(updatedSchedule);
   };
 
-  const handleRemoveTimeSlot = (day, time) => {
+  const handleAvailabilityToggle = (day) => {
     const updatedSchedule = { ...schedule };
-    updatedSchedule[day] = updatedSchedule[day].filter(t => t !== time);
+    updatedSchedule[day] = { 
+      ...updatedSchedule[day], 
+      available: !updatedSchedule[day].available 
+    };
+    setSchedule(updatedSchedule);
+  };
+
+  const formatTime = (time24) => {
+    if (!time24) return '';
+    const [hours, minutes] = time24.split(':');
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12.toString().padStart(2, '0')}:${minutes} ${ampm}`;
+  };
+
+  const handleAddBreak = (day) => {
+    setBreakModal({
+      isOpen: true,
+      day,
+      breakStart: '',
+      breakEnd: '',
+    });
+  };
+
+  const handleSaveBreak = () => {
+    if (!breakModal.breakStart || !breakModal.breakEnd) {
+      alert('Please enter both start and end times');
+      return;
+    }
+
+    const updatedSchedule = { ...schedule };
+    if (!updatedSchedule[breakModal.day].breaks) {
+      updatedSchedule[breakModal.day].breaks = [];
+    }
+    updatedSchedule[breakModal.day].breaks.push({
+      start: breakModal.breakStart,
+      end: breakModal.breakEnd,
+    });
+    setSchedule(updatedSchedule);
+    setBreakModal({ isOpen: false, day: null, breakStart: '', breakEnd: '' });
+  };
+
+  const handleCloseBreakModal = () => {
+    setBreakModal({ isOpen: false, day: null, breakStart: '', breakEnd: '' });
+  };
+
+  const handleRemoveBreak = (day, index) => {
+    const updatedSchedule = { ...schedule };
+    updatedSchedule[day].breaks.splice(index, 1);
     setSchedule(updatedSchedule);
   };
 
@@ -477,6 +533,30 @@ export default function DoctorProfile() {
                       <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Education</p>
                       <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{formData.education || 'MD, Johns Hopkins University'}</p>
                     </div>
+
+                    {/* Schedule Display */}
+                    <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #e5e7eb', paddingTop: '24px', marginTop: '24px' }}>
+                      <p style={{ margin: '0 0 16px 0', fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Available Schedule</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
+                        {Object.entries(schedule).map(([day, dayData]) => (
+                          <div key={day} style={{
+                            padding: '12px',
+                            backgroundColor: dayData.available ? '#d1fae5' : '#f3f4f6',
+                            borderRadius: '6px',
+                            border: `1px solid ${dayData.available ? '#a7f3d0' : '#d1d5db'}`
+                          }}>
+                            <p style={{ margin: '0 0 4px 0', fontWeight: 600, fontSize: '13px', color: '#0f172a' }}>{day}</p>
+                            {dayData.available ? (
+                              <p style={{ margin: 0, fontSize: '12px', color: '#047857', fontWeight: 500 }}>
+                                {formatTime(dayData.open)} - {formatTime(dayData.close)}
+                              </p>
+                            ) : (
+                              <p style={{ margin: 0, fontSize: '12px', color: '#6b7280', fontStyle: 'italic' }}>Not Available</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   /* Edit Mode */
@@ -565,61 +645,108 @@ export default function DoctorProfile() {
                         Available Schedule
                       </h3>
                       
-                      {Object.entries(schedule).map(([day, times]) => (
-                        <div key={day} style={{ marginBottom: '20px' }}>
-                          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#374151', fontSize: '13px' }}>
-                            {day}
-                          </label>
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px', minHeight: '32px' }}>
-                            {times && times.length > 0 ? (
-                              times.map((time, idx) => (
-                                <button
-                                  key={`${day}-${idx}`}
-                                  onClick={() => handleRemoveTimeSlot(day, time)}
-                                  style={{
-                                    backgroundColor: '#DBEAFE',
-                                    color: '#1E40AF',
-                                    border: '1px solid #93C5FD',
-                                    borderRadius: '6px',
-                                    padding: '6px 12px',
-                                    fontSize: '12px',
-                                    cursor: 'pointer',
-                                    fontWeight: 500,
-                                  }}
-                                  title="Click to remove"
-                                >
-                                  {time} ✕
-                                </button>
-                              ))
-                            ) : (
-                              <span style={{ color: '#9ca3af', fontSize: '12px' }}>No time slots added</span>
-                            )}
+                      {Object.entries(schedule).map(([day, dayData]) => (
+                        <div key={day} style={{ marginBottom: '20px', padding: '12px', backgroundColor: '#f9fafb', borderRadius: '6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                            <label style={{ fontWeight: 600, color: '#374151', fontSize: '13px', minWidth: '80px' }}>
+                              {day}
+                            </label>
+                            <input
+                              type="checkbox"
+                              checked={dayData.available}
+                              onChange={() => handleAvailabilityToggle(day)}
+                              style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                              title="Mark as available/not available"
+                            />
+                            <span style={{ color: '#6b7280', fontSize: '12px' }}>
+                              {dayData.available ? 'Available' : 'Not Available'}
+                            </span>
                           </div>
                           
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <input
-                              type="time"
-                              value={newTimeSlot}
-                              onChange={(e) => setNewTimeSlot(e.target.value)}
-                              style={{ padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '12px' }}
-                              placeholder="HH:MM"
-                            />
-                            <button
-                              onClick={() => handleAddTimeSlot(day)}
-                              style={{
-                                backgroundColor: '#E0E7FF',
-                                color: '#4F46E5',
-                                border: '1px solid #C7D2FE',
-                                borderRadius: '4px',
-                                padding: '8px 12px',
-                                fontSize: '12px',
-                                cursor: 'pointer',
-                                fontWeight: 500,
-                              }}
-                            >
-                              Add Time
-                            </button>
-                          </div>
+                          {dayData.available && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                                <div>
+                                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500', color: '#6b7280', fontSize: '12px' }}>Open</label>
+                                  <input
+                                    type="time"
+                                    value={dayData.open}
+                                    onChange={(e) => handleScheduleChange(day, 'open', e.target.value)}
+                                    style={{ padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '12px' }}
+                                  />
+                                </div>
+                                <div>
+                                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500', color: '#6b7280', fontSize: '12px' }}>Close</label>
+                                  <input
+                                    type="time"
+                                    value={dayData.close}
+                                    onChange={(e) => handleScheduleChange(day, 'close', e.target.value)}
+                                    style={{ padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '12px' }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Breaks Section */}
+                              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '8px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                  <label style={{ fontWeight: '500', color: '#374151', fontSize: '12px' }}>Breaks</label>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAddBreak(day)}
+                                    style={{
+                                      backgroundColor: '#E0E7FF',
+                                      color: '#4F46E5',
+                                      border: '1px solid #C7D2FE',
+                                      borderRadius: '4px',
+                                      padding: '4px 8px',
+                                      fontSize: '11px',
+                                      cursor: 'pointer',
+                                      fontWeight: 500,
+                                    }}
+                                  >
+                                    + Add Break
+                                  </button>
+                                </div>
+                                {dayData.breaks && dayData.breaks.length > 0 ? (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    {dayData.breaks.map((breakTime, idx) => (
+                                      <div
+                                        key={idx}
+                                        style={{
+                                          display: 'flex',
+                                          justifyContent: 'space-between',
+                                          alignItems: 'center',
+                                          backgroundColor: '#FEF3C7',
+                                          padding: '6px 8px',
+                                          borderRadius: '4px',
+                                          fontSize: '12px',
+                                          color: '#92400E',
+                                        }}
+                                      >
+                                        <span>{formatTime(breakTime.start)} - {formatTime(breakTime.end)}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemoveBreak(day, idx)}
+                                          style={{
+                                            backgroundColor: 'transparent',
+                                            border: 'none',
+                                            color: '#92400E',
+                                            cursor: 'pointer',
+                                            fontSize: '14px',
+                                            padding: '0 4px',
+                                          }}
+                                        >
+                                          ✕
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', fontStyle: 'italic' }}>No breaks</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -630,22 +757,25 @@ export default function DoctorProfile() {
                   <div style={{ display: 'flex', gap: '12px', marginTop: '30px' }}>
                     <button
                       onClick={handleSave}
+                      disabled={saving}
                       style={{
                         flex: 1,
                         padding: '10px 16px',
-                        backgroundColor: '#10B981',
+                        backgroundColor: saving ? '#9ca3af' : '#10B981',
                         color: 'white',
                         border: 'none',
                         borderRadius: '6px',
-                        cursor: 'pointer',
+                        cursor: saving ? 'not-allowed' : 'pointer',
                         fontWeight: 600,
                         fontSize: '14px',
+                        opacity: saving ? 0.7 : 1,
                       }}
                     >
-                      ✅ Save Changes
+                      {saving ? '⏳ Saving...' : '✅ Save Changes'}
                     </button>
                     <button
                       onClick={() => setEditing(false)}
+                      disabled={saving}
                       style={{
                         flex: 1,
                         padding: '10px 16px',
@@ -653,9 +783,10 @@ export default function DoctorProfile() {
                         color: 'white',
                         border: 'none',
                         borderRadius: '6px',
-                        cursor: 'pointer',
+                        cursor: saving ? 'not-allowed' : 'pointer',
                         fontWeight: 600,
                         fontSize: '14px',
+                        opacity: saving ? 0.5 : 1,
                       }}
                     >
                       ✕ Cancel
@@ -708,6 +839,110 @@ export default function DoctorProfile() {
           </div>
         </div>
       </div>
+
+      {/* Break Modal */}
+      {breakModal.isOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '30px',
+            maxWidth: '400px',
+            width: '90%',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
+          }}>
+            <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>
+              Add Break for {breakModal.day}
+            </h3>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#374151', fontSize: '13px' }}>
+                Break Start Time
+              </label>
+              <input
+                type="time"
+                value={breakModal.breakStart}
+                onChange={(e) => setBreakModal({ ...breakModal, breakStart: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  boxSizing: 'border-box',
+                  backgroundColor: '#f9fafb',
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#374151', fontSize: '13px' }}>
+                Break End Time
+              </label>
+              <input
+                type="time"
+                value={breakModal.breakEnd}
+                onChange={(e) => setBreakModal({ ...breakModal, breakEnd: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  boxSizing: 'border-box',
+                  backgroundColor: '#f9fafb',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={handleSaveBreak}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  backgroundColor: '#10B981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                }}
+              >
+                ✅ Add Break
+              </button>
+              <button
+                onClick={handleCloseBreakModal}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  backgroundColor: '#ef4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                }}
+              >
+                ✕ Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

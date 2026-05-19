@@ -115,7 +115,6 @@ export default function DoctorAppointments() {
             position: 'absolute',
             bottom: '20px',
             left: '20px',
-            right: '20px',
             padding: '10px 16px',
             backgroundColor: '#ef4444',
             color: 'white',
@@ -124,6 +123,7 @@ export default function DoctorAppointments() {
             cursor: 'pointer',
             fontWeight: 600,
             fontSize: '13px',
+            width: 'auto',
           }}
         >
           🚪 Logout
@@ -237,22 +237,6 @@ export default function DoctorAppointments() {
                       }}
                     >
                       Update Status
-                    </button>
-
-                    <button
-                      style={{
-                        padding: '8px 14px',
-                        backgroundColor: '#f3f4f6',
-                        color: '#374151',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      Upload Prescription
                     </button>
                   </div>
                 </div>

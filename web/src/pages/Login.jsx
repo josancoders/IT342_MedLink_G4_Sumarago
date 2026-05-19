@@ -47,7 +47,9 @@ export default function Login() {
     setLoading(true);
     try {
       // credentialResponse.credential is the Google ID token (JWT)
+      console.log('Google login attempt...');
       const res = await googleLogin(credentialResponse.credential);
+      console.log('Google login response:', res.data);
       if (res.data.success) {
         localStorage.setItem('user', JSON.stringify(res.data));
         localStorage.setItem('token', res.data.token);
@@ -63,6 +65,7 @@ export default function Login() {
         setError(res.data.message);
       }
     } catch (err) {
+      console.error('Google login error:', err.response?.data || err.message);
       setError(err.response?.data?.message || 'Google login failed. Please try again.');
     } finally {
       setLoading(false);

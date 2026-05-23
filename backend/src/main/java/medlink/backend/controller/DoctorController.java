@@ -98,6 +98,15 @@ public class DoctorController {
     public ResponseEntity<DoctorDTO> updateDoctor(@PathVariable Long id, @RequestBody DoctorDTO doctorDTO) {
         return doctorRepository.findById(id)
                 .map(doctor -> {
+                    // If fullName or email provided, update the associated User record so changes propagate across app
+                    User user = doctor.getUser();
+                    if (doctorDTO.getFullName() != null) {
+                        user.setFullName(doctorDTO.getFullName());
+                    }
+                    if (doctorDTO.getEmail() != null) {
+                        user.setEmail(doctorDTO.getEmail());
+                    }
+                    userRepository.save(user);
                     if (doctorDTO.getPhone() != null) doctor.setPhone(doctorDTO.getPhone());
                     if (doctorDTO.getSpecialization() != null) doctor.setSpecialization(doctorDTO.getSpecialization());
                     if (doctorDTO.getConsultationFee() != null) doctor.setConsultationFee(doctorDTO.getConsultationFee());

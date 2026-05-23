@@ -4,6 +4,16 @@ import { useNavigate, useLocation } from 'react-router-dom';
 export default function DoctorProfile() {
   const navigate = useNavigate();
   const location = useLocation();
+  const SPECIALTIES = [
+    'Cardiologist',
+    'Neurologist',
+    'Dermatologist',
+    'Pediatrician',
+    'Orthopedist',
+    'General Practitioner',
+    'Psychiatrist',
+    'Ophthalmologist',
+  ];
   const [user, setUser] = useState(null);
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -150,6 +160,7 @@ export default function DoctorProfile() {
       setMessage('');
       const token = localStorage.getItem('token');
       const updateData = {
+        fullName: formData.fullName || null,
         specialization: formData.specialization || null,
         consultationFee: formData.consultationFee ? parseFloat(formData.consultationFee) : null,
         bio: formData.bio || null,
@@ -194,7 +205,28 @@ export default function DoctorProfile() {
         setMessage('✅ Profile saved successfully! Your schedule has been updated.');
         setEditing(false);
         setSaving(false);
+        // Refresh profile and update local user name so header updates immediately
         fetchDoctorProfile(user.userId);
+        try {
+          const updatedUser = { ...user, name: formData.fullName || user.name };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          setUser(updatedUser);
+          // Notify other tabs/pages to refresh doctor data
+          try {
+            localStorage.setItem('doctorProfileUpdated', JSON.stringify({ id: doctor?.id || null, ts: Date.now() }));
+          } catch (e) {
+            console.warn('Could not set doctorProfileUpdated flag', e);
+          }
+          // Also dispatch an in-page event so the current tab's other components update immediately
+          try {
+            const ev = new CustomEvent('doctorProfileUpdated', { detail: { id: doctor?.id || null, user: updatedUser } });
+            window.dispatchEvent(ev);
+          } catch (e) {
+            console.warn('Could not dispatch doctorProfileUpdated event', e);
+          }
+        } catch (e) {
+          console.warn('Could not update local user name', e);
+        }
         setTimeout(() => setMessage(''), 5000);
       } else {
         const errorText = await response.text();
@@ -282,87 +314,7 @@ export default function DoctorProfile() {
       <div style={{ width: '280px', backgroundColor: '#ffffff', borderRight: '1px solid #e5e7eb', padding: '30px 0', position: 'relative', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         <h2 style={{ padding: '0 20px', margin: '0 0 30px 0', fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>🏥 MedLink</h2>
         
-        {/* Doctor Card */}
-        {!loading && doctor && (
-          <div style={{ padding: '0 20px', marginBottom: '30px' }}>
-            <div style={{
-              backgroundColor: '#f9fafb',
-              borderRadius: '12px',
-              padding: '20px',
-              textAlign: 'center',
-              border: '1px solid #e5e7eb'
-            }}>
-              <div style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '50%',
-                backgroundColor: '#3B82F6',
-                color: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 700,
-                fontSize: '24px',
-                margin: '0 auto 12px',
-              }}>
-                {initials}
-              </div>
-              <h3 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>
-                {user.name}
-              </h3>
-              <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#6b7280' }}>
-                {formData.specialization || 'Doctor'}
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginBottom: '12px' }}>
-                <span style={{
-                  backgroundColor: '#fef3c7',
-                  color: '#b45309',
-                  padding: '4px 12px',
-                  borderRadius: '20px',
-                  fontSize: '12px',
-                  fontWeight: 600
-                }}>
-                  ${formData.consultationFee || '0'}/session
-                </span>
-                <span style={{
-                  backgroundColor: '#d1fae5',
-                  color: '#047857',
-                  padding: '4px 12px',
-                  borderRadius: '20px',
-                  fontSize: '12px',
-                  fontWeight: 600
-                }}>
-                  Active
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Quick Stats */}
-        {!loading && doctor && (
-          <div style={{ padding: '0 20px', marginBottom: '30px' }}>
-            <p style={{ margin: '0 0 12px 0', fontSize: '12px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Quick Stats</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
-                <span style={{ color: '#6b7280' }}>👥 Total Patients</span>
-                <span style={{ fontWeight: 700, color: '#0f172a' }}>128</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
-                <span style={{ color: '#6b7280' }}>📋 Appointments</span>
-                <span style={{ fontWeight: 700, color: '#0f172a' }}>3.6k</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
-                <span style={{ color: '#6b7280' }}>⭐ Rating</span>
-                <span style={{ fontWeight: 700, color: '#0f172a' }}>4.8★</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
-                <span style={{ color: '#6b7280' }}>🎓 Experience</span>
-                <span style={{ fontWeight: 700, color: '#0f172a' }}>10 yrs</span>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Sidebar: kept minimal (nav + logout). Doctor summary moved to main content and centered. */}
 
         {/* Navigation */}
         <nav style={{ marginBottom: 'auto' }}>
@@ -492,6 +444,34 @@ export default function DoctorProfile() {
               </div>
             )}
 
+            {/* Centered Profile Header */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+              <div style={{ maxWidth: '900px', width: '100%', display: 'flex', alignItems: 'center', gap: '24px', padding: '18px', borderRadius: '10px', background: '#fafafa', border: '1px solid #eef2f7' }}>
+                <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ width: '84px', height: '84px', borderRadius: '50%', backgroundColor: '#3B82F6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '28px' }}>
+                    {initials}
+                  </div>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#0f172a' }}>{user.name}</h3>
+                      <p style={{ margin: '6px 0 0 0', color: '#6b7280', fontSize: '13px' }}>{formData.specialization || 'Doctor'}</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <span style={{ backgroundColor: '#fef3c7', color: '#b45309', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700 }}>₱{formData.consultationFee || '0'}/session</span>
+                      <span style={{ backgroundColor: '#d1fae5', color: '#047857', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700 }}>Active</span>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '10px', display: 'flex', gap: '16px', color: '#6b7280', fontSize: '13px', flexWrap: 'wrap' }}>
+                    <div><strong style={{ color: '#0f172a' }}>{formData.location || '—'}</strong></div>
+                    <div>{formData.languages || '—'}</div>
+                    <div>{formData.education || '—'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {loading ? (
               <p>Loading profile...</p>
             ) : (
@@ -503,7 +483,7 @@ export default function DoctorProfile() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
                     <div>
                       <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Full Name</p>
-                      <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{user.name}</p>
+                      <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{formData.fullName || user.name}</p>
                     </div>
                     <div>
                       <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Email</p>
@@ -519,7 +499,7 @@ export default function DoctorProfile() {
                     </div>
                     <div>
                       <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Consultation Fee</p>
-                      <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>${formData.consultationFee || '0'}</p>
+                      <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>₱{formData.consultationFee || '0'}</p>
                     </div>
                     <div>
                       <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Location</p>
@@ -534,33 +514,23 @@ export default function DoctorProfile() {
                       <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{formData.education || 'MD, Johns Hopkins University'}</p>
                     </div>
 
-                    {/* Schedule Display */}
-                    <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #e5e7eb', paddingTop: '24px', marginTop: '24px' }}>
-                      <p style={{ margin: '0 0 16px 0', fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Available Schedule</p>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
-                        {Object.entries(schedule).map(([day, dayData]) => (
-                          <div key={day} style={{
-                            padding: '12px',
-                            backgroundColor: dayData.available ? '#d1fae5' : '#f3f4f6',
-                            borderRadius: '6px',
-                            border: `1px solid ${dayData.available ? '#a7f3d0' : '#d1d5db'}`
-                          }}>
-                            <p style={{ margin: '0 0 4px 0', fontWeight: 600, fontSize: '13px', color: '#0f172a' }}>{day}</p>
-                            {dayData.available ? (
-                              <p style={{ margin: 0, fontSize: '12px', color: '#047857', fontWeight: 500 }}>
-                                {formatTime(dayData.open)} - {formatTime(dayData.close)}
-                              </p>
-                            ) : (
-                              <p style={{ margin: 0, fontSize: '12px', color: '#6b7280', fontStyle: 'italic' }}>Not Available</p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    {/* Schedule removed here to avoid duplicate display; final schedule renders below */}
                   </div>
                 ) : (
                   /* Edit Mode */
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, color: '#374151', fontSize: '13px' }}>Full Name</label>
+                      <input
+                        type="text"
+                        name="fullName"
+                        value={formData.fullName}
+                        onChange={handleInputChange}
+                        placeholder="e.g., Dr. John Doe"
+                        style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }}
+                      />
+                    </div>
+
                     <div>
                       <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, color: '#374151', fontSize: '13px' }}>Phone</label>
                       <input
@@ -573,17 +543,20 @@ export default function DoctorProfile() {
                     </div>
                     <div>
                       <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, color: '#374151', fontSize: '13px' }}>Specialization</label>
-                      <input
-                        type="text"
+                      <select
                         name="specialization"
                         value={formData.specialization}
                         onChange={handleInputChange}
-                        placeholder="e.g., Cardiologist"
-                        style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }}
-                      />
+                        style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box', backgroundColor: 'white' }}
+                      >
+                        <option value="">Select specialty</option>
+                        {SPECIALTIES.map((specialty) => (
+                          <option key={specialty} value={specialty}>{specialty}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
-                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, color: '#374151', fontSize: '13px' }}>Consultation Fee ($)</label>
+                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, color: '#374151', fontSize: '13px' }}>Consultation Fee (₱)</label>
                       <input
                         type="number"
                         name="consultationFee"
@@ -804,31 +777,27 @@ export default function DoctorProfile() {
                     {/* Available Schedule Display */}
                     <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #e5e7eb' }}>
                       <p style={{ margin: '0 0 16px 0', fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Available Schedule</p>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        {Object.entries(schedule).map(([day, times]) => (
-                          times && times.length > 0 && (
-                            <div key={day}>
-                              <p style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>
-                                {day}
-                              </p>
-                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                {times.map((time, idx) => (
-                                  <span
-                                    key={`${day}-${idx}`}
-                                    style={{
-                                      backgroundColor: '#E0E7FF',
-                                      color: '#4F46E5',
-                                      padding: '4px 8px',
-                                      borderRadius: '4px',
-                                      fontSize: '12px',
-                                    }}
-                                  >
-                                    {time}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+                        {Object.entries(schedule).map(([day, dayData]) => (
+                          <div key={day} style={{ padding: '12px', backgroundColor: dayData.available ? '#d1fae5' : '#f3f4f6', borderRadius: '6px', border: `1px solid ${dayData.available ? '#a7f3d0' : '#d1d5db'}` }}>
+                            <p style={{ margin: '0 0 6px 0', fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>{day}</p>
+                            {dayData.available ? (
+                              <>
+                                <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#047857', fontWeight: 600 }}>{formatTime(dayData.open)} - {formatTime(dayData.close)}</p>
+                                {dayData.breaks && dayData.breaks.length > 0 ? (
+                                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                    {dayData.breaks.map((b, i) => (
+                                      <span key={i} style={{ backgroundColor: '#FEF3C7', color: '#92400E', padding: '4px 8px', borderRadius: '4px', fontSize: '12px' }}>{formatTime(b.start)} - {formatTime(b.end)}</span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p style={{ margin: 0, fontSize: '12px', color: '#6b7280', fontStyle: 'italic' }}>No breaks</p>
+                                )}
+                              </>
+                            ) : (
+                              <p style={{ margin: 0, fontSize: '12px', color: '#6b7280', fontStyle: 'italic' }}>Not Available</p>
+                            )}
+                          </div>
                         ))}
                       </div>
                     </div>

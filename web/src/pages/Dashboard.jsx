@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import './Dashboard.css';
+import { getMyAppointments } from '../api/auth';
 
 const RECOMMENDED_DOCTORS = [
   { id: 1, name: 'Dr. Sophia Chen',   initials: 'SC', color: '#dbeafe', specialty: 'Cardiologist',  exp: '14 yrs', schedule: 'Mon, Wed, Fri', fee: 120 },
@@ -8,16 +9,12 @@ const RECOMMENDED_DOCTORS = [
   { id: 3, name: 'Dr. Aisha Patel',   initials: 'AP', color: '#ede9fe', specialty: 'Dermatologist', exp: '8 yrs',  schedule: 'Mon, Fri',      fee: 90  },
 ];
 
-const UPCOMING = [
-  { date: '10', month: 'Mar', doctor: 'Dr. Sophia Chen',   time: '10:00 AM', status: 'Confirmed' },
-  { date: '14', month: 'Mar', doctor: 'Dr. Marcus Rivera', time: '2:00 PM',  status: 'Pending'   },
-];
+// upcoming will be loaded dynamically for the logged-in user
 
 const NAV_LINKS = [
   { label: 'Dashboard',       path: '/dashboard',    icon: '⊞' },
   { label: 'Find Doctors',    path: '/find-doctors',  icon: '🔍' },
   { label: 'My Appointments', path: '/appointments',  icon: '📋' },
-  { label: 'Medical History', path: '/medical',       icon: '📄' },
   { label: 'Prescriptions',   path: '/prescriptions', icon: '💊' },
 ];
 
@@ -28,6 +25,7 @@ export default function Dashboard() {
   const location = useLocation();
   const [user, setUser] = useState(null);
   const [doctors, setDoctors] = useState([]);
+  const [appointments, setAppointments] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -38,8 +36,36 @@ export default function Dashboard() {
     } else {
       setUser(JSON.parse(stored));
       fetchDoctors();
+      fetchAppointments();
     }
+    // Listen for doctor profile updates from other pages/tabs
+    const onStorage = (e) => {
+      if (e.key === 'doctorProfileUpdated') {
+        fetchDoctors();
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    const onCustom = (e) => {
+      // update local user from localStorage (profile component already wrote it)
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) setUser(JSON.parse(storedUser));
+      fetchDoctors();
+    };
+    window.addEventListener('doctorProfileUpdated', onCustom);
+    return () => window.removeEventListener('storage', onStorage);
+    // cleanup custom event
+    // NOTE: we can't remove both in same return easily; attach cleanup below
   }, [navigate]);
+
+  useEffect(() => {
+    const onCustom = (e) => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) setUser(JSON.parse(storedUser));
+      fetchDoctors();
+    };
+    window.addEventListener('doctorProfileUpdated', onCustom);
+    return () => window.removeEventListener('doctorProfileUpdated', onCustom);
+  }, []);
 
   const fetchDoctors = async () => {
     try {
@@ -52,6 +78,19 @@ export default function Dashboard() {
       console.error('Error fetching doctors:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAppointments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const resp = await getMyAppointments(token);
+      if (resp && resp.data) {
+        setAppointments(resp.data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching appointments:', err);
     }
   };
 
@@ -132,39 +171,32 @@ export default function Dashboard() {
                 <h3 className="db-section-title">Recommended Doctors</h3>
                 <a href="/find-doctors" className="db-view-all">View All →</a>
               </div>
-
               <div className="db-doctor-cards">
-                {loading ? (
-                  <p>Loading doctors...</p>
-                ) : doctors.length === 0 ? (
-                  <p>No doctors available.</p>
-                ) : (
-                  doctors.slice(0, 3).map(doc => {
-                    const colors = ['#dbeafe', '#fef3c7', '#ede9fe', '#dcfce7'];
-                    const initials = doc.fullName?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'D';
-                    return (
-                      <div key={doc.id} className="db-doctor-card">
-                        <div className="db-doc-top">
-                          <div className="db-doc-avatar" style={{ background: colors[doc.id % colors.length] }}>
-                            {initials}
-                          </div>
-                          <div>
-                            <p className="db-doc-name">{doc.fullName}</p>
-                            <p className="db-doc-spec">{doc.specialization}</p>
-                          </div>
+                {doctors && doctors.length > 0 ? (
+                  doctors.slice(0,3).map(doc => (
+                    <div key={doc.id} className="db-doctor-card">
+                      <div className="db-doc-top">
+                        <div className="db-doc-avatar" style={{ background: doc.color || '#dbeafe' }}>
+                          {(doc.fullName || doc.name || '').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                         </div>
-                        <div className="db-doc-meta">
-                          <span className="db-doc-fee">${doc.consultationFee}</span>
+                        <div>
+                          <p className="db-doc-name">{doc.fullName || doc.name}</p>
+                          <p className="db-doc-spec">{doc.specialization || doc.specialty}</p>
                         </div>
-                        <button 
-                          className="db-book-btn"
-                          onClick={() => navigate(`/book-appointment/${doc.id}`)}
-                        >
-                          Book an appointment
-                        </button>
                       </div>
-                    );
-                  })
+                      <div className="db-doc-meta">
+                        <span className="db-doc-fee">{doc.consultationFee ? `₱${doc.consultationFee}` : '₱N/A'}</span>
+                        <span className="db-doc-schedule">{doc.schedule || doc.exp || 'Available on request'}</span>
+                      </div>
+                      <p className="db-doc-bio">{doc.bio ? doc.bio.substring(0, 100) + '...' : 'Experienced healthcare professional'}</p>
+                      <div className="db-doc-actions">
+                        <Link to={`/doctors/${doc.id}`} className="db-btn-detail">View Profile</Link>
+                        <button className="db-book-btn" onClick={() => navigate(`/book-appointment/${doc.id}`)}>Book Appointment</button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="db-no-doctors">No doctors available</div>
                 )}
               </div>
             </div>
@@ -176,21 +208,29 @@ export default function Dashboard() {
                 <a href="#" className="db-view-all">View All →</a>
               </div>
               <div className="db-upcoming-list">
-                {UPCOMING.map((appt, i) => (
-                  <div key={i} className="db-upcoming-card">
-                    <div className="db-upcoming-date">
-                      <span className="db-upcoming-day">{appt.date}</span>
-                      <span className="db-upcoming-month">{appt.month}</span>
-                    </div>
-                    <div className="db-upcoming-info">
-                      <p className="db-upcoming-doctor">{appt.doctor}</p>
-                      <p className="db-upcoming-time">{appt.time}</p>
-                    </div>
-                    <span className={`db-status db-status-${appt.status.toLowerCase()}`}>
-                      {appt.status}
-                    </span>
-                  </div>
-                ))}
+                {appointments && appointments.length > 0 ? (
+                  appointments
+                    .filter(appt => appt.status !== 'CANCELLED')
+                    .sort((a, b) => new Date(a.appointmentDate) - new Date(b.appointmentDate))
+                    .slice(0, 3)
+                    .map((appt) => (
+                      <div key={appt.id} className="db-upcoming-card">
+                        <div className="db-upcoming-date">
+                          <span className="db-upcoming-day">{new Date(appt.appointmentDate).getDate()}</span>
+                          <span className="db-upcoming-month">{new Date(appt.appointmentDate).toLocaleString('default', { month: 'short' })}</span>
+                        </div>
+                        <div className="db-upcoming-info">
+                          <div className="db-upcoming-doctor">{appt.doctorName}</div>
+                          <div className="db-upcoming-time">{appt.timeSlot}</div>
+                        </div>
+                        <span className={`db-status db-status-${(appt.status || 'PENDING').toLowerCase()}`}>
+                          {appt.status}
+                        </span>
+                      </div>
+                    ))
+                ) : (
+                  <div className="db-upcoming-empty">No upcoming appointments</div>
+                )}
               </div>
             </aside>
           </div>

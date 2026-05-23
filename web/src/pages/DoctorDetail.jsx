@@ -17,6 +17,21 @@ export default function DoctorDetail() {
       return;
     }
     loadDoctor();
+
+    const onStorage = (e) => {
+      if (e.key === 'doctorProfileUpdated') {
+        try {
+          const payload = JSON.parse(e.newValue || e.oldValue || '{}');
+          if (!payload.id || String(payload.id) === String(id)) {
+            loadDoctor();
+          }
+        } catch (err) {
+          loadDoctor();
+        }
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, [id, navigate]);
 
   const loadDoctor = async () => {
@@ -45,7 +60,6 @@ export default function DoctorDetail() {
           <Link to="/dashboard" className="dd-nav-item">⊞ Dashboard</Link>
           <Link to="/find-doctors" className="dd-nav-item">🔍 Find Doctors</Link>
           <Link to="/appointments" className="dd-nav-item">📋 My Appointments</Link>
-          <Link to="/medical-history" className="dd-nav-item">📄 Medical History</Link>
           <Link to="/prescriptions" className="dd-nav-item">💊 Prescriptions</Link>
         </nav>
         <button className="dd-logout" onClick={() => {
@@ -70,7 +84,7 @@ export default function DoctorDetail() {
                   <h1>{doctor.fullName}</h1>
                   <p className="dd-specialty">{doctor.specialization}</p>
                   <div className="dd-meta">
-                    <span className="dd-fee">💰 ${doctor.consultationFee}/session</span>
+                    <span className="dd-fee">💰 ₱{doctor.consultationFee}/session</span>
                     <span className="dd-status">✓ Available</span>
                   </div>
                 </div>

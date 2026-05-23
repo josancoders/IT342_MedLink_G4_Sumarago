@@ -1,5 +1,8 @@
 package medlink.backend.dto;
 
+import java.time.LocalDate;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 public class PrescriptionDTO {
     private Long id;
     private Long appointmentId;
@@ -9,6 +12,9 @@ public class PrescriptionDTO {
     private String frequency;
     private String duration;
     private String filePath;
+
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate appointmentDate;
 
     public PrescriptionDTO() {}
 
@@ -35,4 +41,7 @@ public class PrescriptionDTO {
 
     public String getFilePath() { return filePath; }
     public void setFilePath(String filePath) { this.filePath = filePath; }
+
+    public LocalDate getAppointmentDate() { return appointmentDate; }
+    public void setAppointmentDate(LocalDate appointmentDate) { this.appointmentDate = appointmentDate; }
 }

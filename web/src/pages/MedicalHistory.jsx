@@ -75,7 +75,6 @@ export default function MedicalHistory() {
           <Link to="/dashboard" className="mh-nav-item">⊞ Dashboard</Link>
           <Link to="/find-doctors" className="mh-nav-item">🔍 Find Doctors</Link>
           <Link to="/appointments" className="mh-nav-item">📋 My Appointments</Link>
-          <Link to="/medical-history" className="mh-nav-item active">📄 Medical History</Link>
           <Link to="/prescriptions" className="mh-nav-item">💊 Prescriptions</Link>
         </nav>
         <button className="mh-logout" onClick={() => {

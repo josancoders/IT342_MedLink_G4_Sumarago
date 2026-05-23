@@ -231,7 +231,7 @@ export default function Payment() {
             Consultation Fee
           </span>
           <span style={{ fontSize: '24px', fontWeight: 700, color: '#3B82F6' }}>
-            ${appointmentData.consultationFee}
+            ₱{appointmentData.consultationFee}
           </span>
         </div>
       </div>
@@ -259,7 +259,7 @@ export default function Payment() {
           if (!loading) e.target.style.backgroundColor = '#3B82F6';
         }}
       >
-        {loading ? 'Processing...' : `💳 Pay $${appointmentData.consultationFee} Now`}
+        {loading ? 'Processing...' : `💳 Pay ₱${appointmentData.consultationFee} Now`}
       </button>
     </div>
   );

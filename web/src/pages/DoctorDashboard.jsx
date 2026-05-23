@@ -34,6 +34,12 @@ export default function DoctorDashboard() {
       setUser(userData);
       fetchAppointments();
     }
+    const onCustom = (e) => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) setUser(JSON.parse(storedUser));
+    };
+    window.addEventListener('doctorProfileUpdated', onCustom);
+    return () => window.removeEventListener('doctorProfileUpdated', onCustom);
   }, [navigate]);
 
   const fetchAppointments = async () => {
@@ -174,7 +180,7 @@ export default function DoctorDashboard() {
             <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#0f172a' }}>Doctor Dashboard</h1>
             <input
               type="text"
-              placeholder="Search Doctor..."
+              placeholder="Search Patient..."
               style={{
                 flex: '0 1 300px',
                 padding: '8px 12px',

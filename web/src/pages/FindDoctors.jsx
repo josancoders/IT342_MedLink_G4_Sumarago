@@ -33,6 +33,23 @@ export default function FindDoctors() {
     }
     setUser(JSON.parse(stored));
     loadDoctors();
+
+    const onStorage = (e) => {
+      if (e.key === 'doctorProfileUpdated') {
+        loadDoctors();
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    const onCustom = (e) => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) setUser(JSON.parse(storedUser));
+      loadDoctors();
+    };
+    window.addEventListener('doctorProfileUpdated', onCustom);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('doctorProfileUpdated', onCustom);
+    };
   }, [navigate]);
 
   const loadDoctors = async () => {
@@ -73,35 +90,79 @@ export default function FindDoctors() {
   const filterDoctors = (search, specialty, range) => {
     let filtered = doctors;
 
+    const normalize = (value) => String(value || '').trim().toLowerCase();
+
     if (search) {
       filtered = filtered.filter(doc =>
-        doc.fullName.toLowerCase().includes(search.toLowerCase()) ||
-        doc.specialization.toLowerCase().includes(search.toLowerCase())
+        normalize(doc.fullName).includes(normalize(search)) ||
+        normalize(doc.specialization).includes(normalize(search))
       );
     }
 
     if (specialty) {
-      filtered = filtered.filter(doc =>
-        doc.specialization.toLowerCase().includes(specialty.toLowerCase())
-      );
+      filtered = filtered.filter(doc => normalize(doc.specialization) === normalize(specialty));
     }
 
     filtered = filtered.filter(doc =>
-      doc.consultationFee >= range[0] && doc.consultationFee <= range[1]
+      Number(doc.consultationFee || 0) >= range[0] && Number(doc.consultationFee || 0) <= range[1]
     );
 
     setFilteredDoctors(filtered);
   };
 
+  const formatSchedule = (doctor) => {
+    if (doctor.schedule) {
+      return doctor.schedule;
+    }
+
+    if (doctor.availableSchedule) {
+      try {
+        const parsed = typeof doctor.availableSchedule === 'string'
+          ? JSON.parse(doctor.availableSchedule)
+          : doctor.availableSchedule;
+        const dayOrder = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayLabels = {
+          Sunday: 'Sun',
+          Monday: 'Mon',
+          Tuesday: 'Tue',
+          Wednesday: 'Wed',
+          Thursday: 'Thu',
+          Friday: 'Fri',
+          Saturday: 'Sat'
+        };
+
+        const availableDays = dayOrder
+          .filter(day => parsed?.[day]?.available)
+          .map(day => dayLabels[day]);
+
+        if (availableDays.length > 0) {
+          return availableDays.join(', ');
+        }
+      } catch (error) {
+        return doctor.availableSchedule;
+      }
+    }
+
+    return 'Available on request';
+  };
+
   const DoctorCard = ({ doctor }) => (
     <div className="fd-doctor-card">
-      <div className="fd-doctor-avatar">{doctor.fullName.split(' ').map(n => n[0]).join('')}</div>
-      <h3>{doctor.fullName}</h3>
-      <p className="fd-specialty">{doctor.specialization}</p>
-      <p className="fd-fee">💰 {doctor.consultationFee ? `$${doctor.consultationFee}` : 'N/A'}/session</p>
-      <p className="fd-bio">{doctor.bio ? doctor.bio.substring(0, 100) + '...' : 'Experienced healthcare professional'}</p>
-      <Link to={`/doctors/${doctor.id}`} className="fd-btn-detail">View Profile</Link>
-      <Link to={`/book-appointment/${doctor.id}`} className="fd-btn-book">Book Appointment</Link>
+      <div className="fd-card-top">
+        <div className="fd-doctor-avatar">{doctor.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}</div>
+        <h3>{doctor.fullName}</h3>
+        <p className="fd-specialty-chip">{doctor.specialization}</p>
+      </div>
+
+      <div className="fd-card-meta">
+        <span className="fd-card-schedule">🕒 {formatSchedule(doctor)}</span>
+        <span className="fd-card-fee">₱{doctor.consultationFee || '0'}</span>
+      </div>
+
+      <div className="fd-card-actions">
+        <Link to={`/doctors/${doctor.id}`} className="fd-btn-detail">View Profile</Link>
+        <Link to={`/book-appointment/${doctor.id}`} className="fd-btn-book">Book Appointment</Link>
+      </div>
     </div>
   );
 
@@ -110,7 +171,8 @@ export default function FindDoctors() {
       <div className="fd-skeleton-avatar"></div>
       <div className="fd-skeleton-line"></div>
       <div className="fd-skeleton-line short"></div>
-      <div className="fd-skeleton-line short"></div>
+      <div className="fd-skeleton-meta"></div>
+      <div className="fd-skeleton-button"></div>
     </div>
   );
 
@@ -123,7 +185,6 @@ export default function FindDoctors() {
           <Link to="/dashboard" className="fd-nav-item">⊞ Dashboard</Link>
           <Link to="/find-doctors" className="fd-nav-item active">🔍 Find Doctors</Link>
           <Link to="/appointments" className="fd-nav-item">📋 My Appointments</Link>
-          <Link to="/medical-history" className="fd-nav-item">📄 Medical History</Link>
           <Link to="/prescriptions" className="fd-nav-item">💊 Prescriptions</Link>
         </nav>
         <button className="fd-logout" onClick={() => {
@@ -167,6 +228,7 @@ export default function FindDoctors() {
                 <label className="fd-filter-label">Specialty</label>
                 <div className="fd-specialty-list">
                   <button
+                    type="button"
                     className={`fd-filter-btn ${selectedSpecialty === '' ? 'active' : ''}`}
                     onClick={() => handleSpecialtyChange('')}
                   >
@@ -174,6 +236,7 @@ export default function FindDoctors() {
                   </button>
                   {specialties.map(sp => (
                     <button
+                      type="button"
                       key={sp}
                       className={`fd-filter-btn ${selectedSpecialty === sp ? 'active' : ''}`}
                       onClick={() => handleSpecialtyChange(sp)}
@@ -185,7 +248,7 @@ export default function FindDoctors() {
               </div>
 
               <div className="fd-filter-group">
-                <label className="fd-filter-label">Price Range: ${priceRange[0]} - ${priceRange[1]}</label>
+                <label className="fd-filter-label">Price Range: ₱{priceRange[0]} - ₱{priceRange[1]}</label>
                 <input
                   type="range"
                   min="0"
@@ -197,7 +260,7 @@ export default function FindDoctors() {
                 />
               </div>
 
-              <button className="fd-clear-filters" onClick={() => {
+              <button type="button" className="fd-clear-filters" onClick={() => {
                 setSearchTerm('');
                 setSelectedSpecialty('');
                 setPriceRange([0, 300]);

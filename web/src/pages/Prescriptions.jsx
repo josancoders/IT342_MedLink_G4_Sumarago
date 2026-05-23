@@ -24,10 +24,26 @@ export default function Prescriptions() {
     return () => clearInterval(interval);
   }, [navigate]);
 
+  useEffect(() => {
+    // Refresh when other tabs upload/remove prescriptions
+    const onStorage = (e) => {
+      if (e.key === 'prescriptionUploaded') loadPrescriptions();
+    };
+    const onCustom = (e) => {
+      loadPrescriptions();
+    };
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('prescriptionUploaded', onCustom);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('prescriptionUploaded', onCustom);
+    };
+  }, []);
+
   const loadPrescriptions = async () => {
     try {
       setRefreshing(true);
-      const response = await fetch('http://localhost:8080/api/prescriptions/my-prescriptions', {
+      const response = await fetch('http://localhost:8080/api/prescriptions', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -45,6 +61,7 @@ export default function Prescriptions() {
       console.error(err);
     } finally {
       setRefreshing(false);
+      setLoading(false);
     }
   };
 
@@ -86,7 +103,6 @@ export default function Prescriptions() {
           <Link to="/dashboard" className="pr-nav-item">⊞ Dashboard</Link>
           <Link to="/find-doctors" className="pr-nav-item">🔍 Find Doctors</Link>
           <Link to="/appointments" className="pr-nav-item">📋 My Appointments</Link>
-          <Link to="/medical-history" className="pr-nav-item">📄 Medical History</Link>
           <Link to="/prescriptions" className="pr-nav-item active">💊 Prescriptions</Link>
         </nav>
         <button className="pr-logout" onClick={() => {
@@ -131,12 +147,13 @@ export default function Prescriptions() {
             <div className="pr-list">
               {prescriptions.map(presc => (
                 <div key={presc.id} className="pr-prescription">
-                  <div className="pr-icon">📄</div>
-                  
-                  <div className="pr-details">
-                    <h4>{presc.doctorName || 'Doctor'}</h4>
-                    <p className="pr-doctor">{presc.specialty || presc.specialty} · {new Date(presc.uploadedDate || presc.createdDate || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
-                    <p className="pr-filename">{presc.fileName || presc.filePath || 'Prescription file'}</p>
+                  <div className="pr-left">
+                    <div className="pr-icon">📄</div>
+                    <div className="pr-details">
+                      <h4>{presc.doctorName ? `Dr. ${presc.doctorName}` : 'Doctor'}</h4>
+                      <div className="pr-sub">{presc.specialty ? presc.specialty + ' · ' : ''}{presc.appointmentDate ? new Date(presc.appointmentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</div>
+                      <div className="pr-filename">{presc.fileName || presc.filePath || ''}</div>
+                    </div>
                   </div>
 
                   <div className="pr-actions">
@@ -144,7 +161,7 @@ export default function Prescriptions() {
                       className="pr-btn-download" 
                       onClick={() => handleDownload(presc.filePath || presc.fileName)}
                     >
-                      ↓ Download
+                      ⬇ Download
                     </button>
                   </div>
                 </div>

@@ -10,6 +10,9 @@ export default function DoctorUploadPrescription() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [uploadLoading, setUploadLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterDate, setFilterDate] = useState('');
+  const [prescriptionsMap, setPrescriptionsMap] = useState({});
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -37,12 +40,64 @@ export default function DoctorUploadPrescription() {
       if (response.ok) {
         const data = await response.json();
         // Show completed appointments
-        setAppointments(data.filter(apt => apt.status === 'COMPLETED'));
+        const completed = data.filter(apt => apt.status === 'COMPLETED');
+        setAppointments(completed);
+        // fetch prescriptions for these appointments
+        completed.forEach(apt => fetchPrescriptionForAppointment(apt.id));
       }
     } catch (error) {
       console.error('Error fetching appointments:', error);
     } finally {
       setUploadLoading(false);
+    }
+  };
+
+  const fetchPrescriptionForAppointment = async (appointmentId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const resp = await fetch(`http://localhost:8080/api/prescriptions/appointment/${appointmentId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (resp.ok) {
+        const dto = await resp.json();
+        setPrescriptionsMap(prev => ({ ...prev, [appointmentId]: dto }));
+      } else {
+        setPrescriptionsMap(prev => {
+          const copy = { ...prev };
+          delete copy[appointmentId];
+          return copy;
+        });
+      }
+    } catch (e) {
+      console.error('Error fetching prescription for appointment', e);
+    }
+  };
+
+  const handleRemovePrescription = async (appointmentId) => {
+    if (!window.confirm('Remove uploaded prescription for this appointment?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const resp = await fetch(`http://localhost:8080/api/prescriptions/appointment/${appointmentId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (resp.ok) {
+        setPrescriptionsMap(prev => {
+          const copy = { ...prev };
+          delete copy[appointmentId];
+          return copy;
+        });
+        fetchAppointments();
+        try {
+          localStorage.setItem('prescriptionUploaded', String(appointmentId));
+          window.dispatchEvent(new CustomEvent('prescriptionUploaded', { detail: { appointmentId } }));
+        } catch (e) { }
+      } else {
+        alert('Failed to remove prescription');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error removing prescription');
     }
   };
 
@@ -98,6 +153,7 @@ export default function DoctorUploadPrescription() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('appointmentId', selectedAppointment);
+      const appointmentId = selectedAppointment;
 
       const response = await fetch('http://localhost:8080/api/prescriptions/upload', {
         method: 'POST',
@@ -109,6 +165,15 @@ export default function DoctorUploadPrescription() {
 
       if (response.ok) {
         setMessage('✅ Prescription uploaded successfully!');
+        // refresh prescription info for this appointment so it shows in the list
+        fetchPrescriptionForAppointment(appointmentId);
+        fetchAppointments();
+        // notify other tabs/pages that a prescription was uploaded
+        try {
+          localStorage.setItem('prescriptionUploaded', String(appointmentId));
+          window.dispatchEvent(new CustomEvent('prescriptionUploaded', { detail: { appointmentId } }));
+        } catch (e) { /* ignore */ }
+
         setFile(null);
         setSelectedAppointment('');
         document.querySelector('input[type="file"]').value = '';
@@ -122,6 +187,32 @@ export default function DoctorUploadPrescription() {
       setMessage('❌ Error uploading file');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadFile = async (filename) => {
+    if (!filename) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8080/api/prescriptions/download/${filename}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      } else {
+        alert('Failed to download file');
+      }
+    } catch (err) {
+      console.error('Download error', err);
+      alert('Error downloading file');
     }
   };
 
@@ -214,6 +305,45 @@ export default function DoctorUploadPrescription() {
           <div style={{ flex: 1, padding: '30px', overflowY: 'auto', borderRight: '1px solid #e5e7eb' }}>
             <h2 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: 600, color: '#0f172a' }}>📋 Completed Appointments</h2>
 
+            {/* Search & Filters */}
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '18px', alignItems: 'center' }}>
+              <input
+                type="search"
+                placeholder="Search patient name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #e5e7eb',
+                  fontSize: '14px'
+                }}
+              />
+              <input
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #e5e7eb',
+                  fontSize: '14px'
+                }}
+              />
+              <button
+                onClick={() => { setSearchQuery(''); setFilterDate(''); }}
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #e5e7eb',
+                  backgroundColor: '#f3f4f6',
+                  cursor: 'pointer',
+                  fontWeight: 600
+                }}
+              >Clear</button>
+            </div>
+
             {uploadLoading ? (
               <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
                 <p>Loading appointments...</p>
@@ -224,7 +354,26 @@ export default function DoctorUploadPrescription() {
               </div>
             ) : (
               <div style={{ display: 'grid', gap: '16px' }}>
-                {appointments.map((apt) => (
+                {appointments
+                  .filter(apt => {
+                    // status already filtered server-side, but be safe
+                    if (apt.status && apt.status !== 'COMPLETED') return false;
+                    if (searchQuery) {
+                      const name = (apt.patientName || '').toLowerCase();
+                      if (!name.includes(searchQuery.toLowerCase())) return false;
+                    }
+                    if (filterDate) {
+                      try {
+                        const aptDate = new Date(apt.appointmentDate);
+                        const aptIso = aptDate.toISOString().split('T')[0];
+                        if (aptIso !== filterDate) return false;
+                      } catch (e) {
+                        return false;
+                      }
+                    }
+                    return true;
+                  })
+                  .map((apt) => (
                   <div
                     key={apt.id}
                     onClick={() => setSelectedAppointment(apt.id)}
@@ -247,6 +396,7 @@ export default function DoctorUploadPrescription() {
                     <p style={{ margin: 0, fontSize: '13px', color: '#6b7280' }}>
                       📝 {apt.reason || 'General Checkup'}
                     </p>
+                    {/* uploaded file moved to right panel */}
                   </div>
                 ))}
               </div>
@@ -265,6 +415,31 @@ export default function DoctorUploadPrescription() {
                   <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#0c4a6e' }}>
                     ✓ Selected: {appointments.find(a => a.id == selectedAppointment)?.patientName}
                   </p>
+                </div>
+              )}
+
+              {/* If selected appointment has an uploaded prescription, show it here (right panel) */}
+              {selectedAppointment && prescriptionsMap[selectedAppointment] && (
+                <div style={{ marginBottom: '18px', padding: '12px', backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '18px' }}>📎</span>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>{prescriptionsMap[selectedAppointment].filePath}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Uploaded file for this appointment</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadFile(prescriptionsMap[selectedAppointment].filePath)}
+                      style={{ padding: '8px 12px', borderRadius: '6px', backgroundColor: '#06b6d4', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700 }}
+                    >Download</button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePrescription(selectedAppointment)}
+                      style={{ padding: '8px 12px', borderRadius: '6px', backgroundColor: '#ef4444', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700 }}
+                    >Remove</button>
+                  </div>
                 </div>
               )}
 

@@ -221,7 +221,7 @@ export default function BookAppointment() {
               {doctor.specialization || 'Specialist'}
             </p>
             <p style={{ margin: 0, fontSize: '14px', color: '#3B82F6', fontWeight: 600 }}>
-              ${doctor.consultationFee || '0'} / session
+              ₱{doctor.consultationFee || '0'} / session
             </p>
           </div>
         </div>

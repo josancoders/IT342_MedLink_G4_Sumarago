@@ -178,11 +178,48 @@ public class PrescriptionController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // Get prescription by appointment id
+    @GetMapping("/appointment/{appointmentId}")
+    public ResponseEntity<PrescriptionDTO> getByAppointment(@PathVariable Long appointmentId) {
+        Optional<Appointment> appointmentOpt = appointmentRepository.findById(appointmentId);
+        if (appointmentOpt.isEmpty()) return ResponseEntity.notFound().build();
+        Appointment appointment = appointmentOpt.get();
+        Optional<Prescription> prescOpt = prescriptionRepository.findByAppointment(appointment);
+        return prescOpt.map(p -> ResponseEntity.ok(convertToDTO(p))).orElse(ResponseEntity.notFound().build());
+    }
+
+    // Delete prescription by appointment id
+    @DeleteMapping("/appointment/{appointmentId}")
+    public ResponseEntity<?> deleteByAppointment(@PathVariable Long appointmentId) {
+        Optional<Appointment> appointmentOpt = appointmentRepository.findById(appointmentId);
+        if (appointmentOpt.isEmpty()) return ResponseEntity.notFound().build();
+        Appointment appointment = appointmentOpt.get();
+        Optional<Prescription> prescOpt = prescriptionRepository.findByAppointment(appointment);
+        if (prescOpt.isEmpty()) return ResponseEntity.notFound().build();
+        Prescription presc = prescOpt.get();
+        // delete file if exists
+        try {
+            if (presc.getFilePath() != null) {
+                Path filePath = Paths.get(UPLOAD_DIR).resolve(presc.getFilePath()).normalize();
+                Files.deleteIfExists(filePath);
+            }
+        } catch (Exception e) {
+            // log and continue
+            e.printStackTrace();
+        }
+        prescriptionRepository.delete(presc);
+        return ResponseEntity.ok().build();
+    }
+
     private PrescriptionDTO convertToDTO(Prescription presc) {
         PrescriptionDTO dto = new PrescriptionDTO();
         dto.setId(presc.getId());
         dto.setAppointmentId(presc.getAppointment().getId());
         dto.setDoctorName(presc.getAppointment().getDoctor().getUser().getFullName());
+        // include appointment date for frontend display
+        if (presc.getAppointment() != null) {
+            dto.setAppointmentDate(presc.getAppointment().getAppointmentDate());
+        }
         dto.setMedication(presc.getMedication());
         dto.setDosage(presc.getDosage());
         dto.setFrequency(presc.getFrequency());

@@ -78,7 +78,6 @@ export default function MyAppointments() {
           <Link to="/dashboard" className="ma-nav-item">⊞ Dashboard</Link>
           <Link to="/find-doctors" className="ma-nav-item">🔍 Find Doctors</Link>
           <Link to="/appointments" className="ma-nav-item active">📋 My Appointments</Link>
-          <Link to="/medical-history" className="ma-nav-item">📄 Medical History</Link>
           <Link to="/prescriptions" className="ma-nav-item">💊 Prescriptions</Link>
         </nav>
         <button className="ma-logout" onClick={() => {

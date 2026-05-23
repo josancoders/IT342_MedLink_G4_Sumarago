@@ -396,7 +396,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="form-group">
-                  <label>Consultation Fee ($) <span style={{ color: '#6b7280', fontSize: '12px', fontWeight: 400 }}>(Optional)</span></label>
+                  <label>Consultation Fee (₱) <span style={{ color: '#6b7280', fontSize: '12px', fontWeight: 400 }}>(Optional)</span></label>
                   <input
                     type="number"
                     value={doctorForm.consultationFee}

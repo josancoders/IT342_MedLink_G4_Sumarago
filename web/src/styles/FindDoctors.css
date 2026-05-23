@@ -273,50 +273,85 @@
 
 .fd-doctor-card {
   background: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  padding: 22px 20px 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: all 0.3s;
   text-align: center;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
 }
 
 .fd-doctor-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transform: translateY(-5px);
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.14);
+  transform: translateY(-3px);
 }
 
 .fd-doctor-avatar {
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  width: 64px;
+  height: 64px;
+  background: #dbeafe;
+  color: #1d4ed8;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  font-weight: bold;
-  margin: 0 auto 15px;
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0 auto 12px;
+}
+
+.fd-card-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .fd-doctor-card h3 {
   font-size: 18px;
-  margin: 10px 0;
-  color: #111;
+  margin: 0;
+  color: #111827;
+  font-weight: 800;
 }
 
-.fd-specialty {
+.fd-specialty-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px auto 14px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #dbeafe;
   color: #2563eb;
-  font-size: 13px;
-  margin: 8px 0;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
 }
 
-.fd-fee {
-  color: #fbbf24;
+.fd-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0 14px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.fd-card-schedule {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+  min-width: 0;
+}
+
+.fd-card-fee {
   font-size: 14px;
-  margin: 8px 0;
-  font-weight: 600;
+  font-weight: 800;
+  color: #0f172a;
+  flex-shrink: 0;
 }
 
 .fd-bio {
@@ -328,31 +363,43 @@
 
 .fd-btn-detail,
 .fd-btn-book {
-  display: inline-block;
-  padding: 10px 16px;
-  margin: 8px 4px;
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 42px;
+  padding: 12px 16px;
+  margin: 0;
+  border-radius: 10px;
   text-decoration: none;
   font-size: 13px;
+  font-weight: 700;
   transition: all 0.3s;
   border: none;
   cursor: pointer;
 }
 
-.fd-btn-detail {
-  background: white;
-  color: #2563eb;
-  border: 2px solid #2563eb;
-}
-
-.fd-btn-detail:hover {
-  background: #2563eb;
-  color: white;
+.fd-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
 }
 
 .fd-btn-book {
   background: #2563eb;
   color: white;
+}
+
+.fd-btn-detail {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.fd-btn-detail:hover {
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
 .fd-btn-book:hover {
@@ -364,13 +411,17 @@
 }
 
 .fd-skeleton-avatar {
-  width: 80px;
-  height: 80px;
+  width: 64px;
+  height: 64px;
   background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
   background-size: 200% 100%;
   animation: loading 1.5s infinite;
   border-radius: 50%;
-  margin: 0 auto 15px;
+  margin: 0 auto 12px;
+}
+
+.fd-skeleton-meta {
+  width: 100%;
 }
 
 .fd-skeleton-line {
@@ -385,6 +436,28 @@
 .fd-skeleton-line.short {
   width: 60%;
   margin: 10px auto;
+}
+
+.fd-skeleton-meta,
+.fd-skeleton-button {
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 10px;
+}
+
+.fd-skeleton-meta {
+  height: 14px;
+  margin: 16px 0 14px;
+}
+
+.fd-skeleton-button {
+  height: 42px;
+  margin-top: 6px;
+}
+
+.fd-skeleton-button + .fd-skeleton-button {
+  margin-top: 0;
 }
 
 @keyframes loading {

@@ -29,7 +29,7 @@ export default function AppointmentConfirmation() {
   }
 
   return (
-    <div style={{ padding: '40px 20px', maxWidth: '600px', margin: '0 auto' }}>
+    <div style={{ padding: '40px 20px', maxWidth: '760px', margin: '0 auto' }}>
       {/* Success Icon */}
       <div style={{ textAlign: 'center', marginBottom: '40px' }}>
         <div style={{
@@ -56,36 +56,30 @@ export default function AppointmentConfirmation() {
       {/* Confirmation Details */}
       <div style={{
         backgroundColor: 'white',
-        borderRadius: '12px',
-        padding: '24px',
-        marginBottom: '24px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        borderRadius: '16px',
+        padding: '32px',
+        marginBottom: '28px',
+        boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)',
         border: '1px solid #E5E7EB',
       }}>
-        <h2 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>
+        <h2 style={{ margin: '0 0 24px 0', fontSize: '22px', fontWeight: 800, color: '#0f172a' }}>
           Appointment Details
         </h2>
 
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          gap: '16px',
+          gap: '24px 28px',
         }}>
           <div>
-            <span style={{ color: '#6b7280', fontSize: '13px', fontWeight: 600 }}>Doctor</span>
-            <p style={{ margin: '6px 0 0 0', color: '#0f172a', fontSize: '16px', fontWeight: 600 }}>
+            <span style={{ color: '#6b7280', fontSize: '14px', fontWeight: 700, letterSpacing: '0.02em' }}>Doctor</span>
+            <p style={{ margin: '8px 0 0 0', color: '#0f172a', fontSize: '20px', fontWeight: 700 }}>
               {appointmentData.doctorName}
             </p>
           </div>
           <div>
-            <span style={{ color: '#6b7280', fontSize: '13px', fontWeight: 600 }}>Confirmation #</span>
-            <p style={{ margin: '6px 0 0 0', color: '#0f172a', fontSize: '16px', fontWeight: 600 }}>
-              #{appointmentId}
-            </p>
-          </div>
-          <div>
-            <span style={{ color: '#6b7280', fontSize: '13px', fontWeight: 600 }}>Date</span>
-            <p style={{ margin: '6px 0 0 0', color: '#0f172a', fontSize: '16px' }}>
+            <span style={{ color: '#6b7280', fontSize: '14px', fontWeight: 700, letterSpacing: '0.02em' }}>Date</span>
+            <p style={{ margin: '8px 0 0 0', color: '#0f172a', fontSize: '18px', fontWeight: 600 }}>
               {new Date(appointmentData.appointmentDate).toLocaleDateString('en-US', { 
                 year: 'numeric', 
                 month: 'long', 
@@ -94,37 +88,18 @@ export default function AppointmentConfirmation() {
             </p>
           </div>
           <div>
-            <span style={{ color: '#6b7280', fontSize: '13px', fontWeight: 600 }}>Time</span>
-            <p style={{ margin: '6px 0 0 0', color: '#0f172a', fontSize: '16px' }}>
+            <span style={{ color: '#6b7280', fontSize: '14px', fontWeight: 700, letterSpacing: '0.02em' }}>Time</span>
+            <p style={{ margin: '8px 0 0 0', color: '#0f172a', fontSize: '18px', fontWeight: 600 }}>
               {appointmentData.timeSlot}
             </p>
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
-            <span style={{ color: '#6b7280', fontSize: '13px', fontWeight: 600 }}>Specialization</span>
-            <p style={{ margin: '6px 0 0 0', color: '#0f172a', fontSize: '14px' }}>
+            <span style={{ color: '#6b7280', fontSize: '14px', fontWeight: 700, letterSpacing: '0.02em' }}>Specialization</span>
+            <p style={{ margin: '8px 0 0 0', color: '#0f172a', fontSize: '18px', fontWeight: 600 }}>
               {appointmentData.specialization}
             </p>
           </div>
         </div>
-      </div>
-
-      {/* Next Steps */}
-      <div style={{
-        backgroundColor: '#FEF3C7',
-        borderRadius: '12px',
-        padding: '16px',
-        marginBottom: '24px',
-        borderLeft: '4px solid #F59E0B',
-      }}>
-        <p style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 600, color: '#92400E' }}>
-          📝 Next Steps:
-        </p>
-        <ul style={{ margin: 0, paddingLeft: '20px', color: '#92400E', fontSize: '14px' }}>
-          <li>You will receive a confirmation email shortly</li>
-          <li>Download the appointment details from your email</li>
-          <li>Check your calendar for appointment reminders</li>
-          <li>Arrive 10 minutes early if in-person</li>
-        </ul>
       </div>
 
       {/* Action Buttons */}

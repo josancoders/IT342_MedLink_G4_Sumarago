@@ -10,6 +10,7 @@ export default function BookAppointment() {
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
+  const [bookedTimeSlots, setBookedTimeSlots] = useState([]);
   const [formData, setFormData] = useState({
     appointmentDate: '',
     timeSlot: '',
@@ -79,6 +80,122 @@ export default function BookAppointment() {
     }
   };
 
+  const loadBookedTimeSlots = async (dateStr) => {
+    if (!doctorId || !dateStr) {
+      setBookedTimeSlots([]);
+      return;
+    }
+    // Normalize date to ISO yyyy-MM-dd. Support dd/MM/yyyy inputs.
+    const normalizeDateForApi = (d) => {
+      if (!d) return d;
+      if (d.includes('-')) return d; // assume already ISO
+      if (d.includes('/')) {
+        const parts = d.split('/'); // expecting dd/MM/yyyy
+        if (parts.length === 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          const year = parseInt(parts[2], 10);
+          const dt = new Date(year, month, day);
+          return dt.toISOString().split('T')[0];
+        }
+      }
+      try {
+        return new Date(d).toISOString().split('T')[0];
+      } catch (e) {
+        return d;
+      }
+    };
+
+    const apiDate = normalizeDateForApi(dateStr);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8080/api/appointments/doctor/${doctorId}/booked-slots?date=${apiDate}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.debug('loadBookedTimeSlots', { doctorId, apiDate, status: response.status });
+
+      if (response.ok) {
+        const data = await response.json();
+        setBookedTimeSlots(data || []);
+        // If currently selected time becomes booked, clear selection
+        const isSelectedNowBooked = (prevSlot) => {
+          if (!prevSlot) return false;
+          const to24 = (s) => {
+            try {
+              const parts = s.trim().split(' ');
+              const time = parts[0];
+              const ampm = parts[1] || null;
+              const [h, m] = time.split(':').map(Number);
+              let hh = h;
+              if (ampm) {
+                if (ampm.toUpperCase() === 'PM' && hh !== 12) hh += 12;
+                if (ampm.toUpperCase() === 'AM' && hh === 12) hh = 0;
+              }
+              return `${hh.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+            } catch (e) {
+              return s;
+            }
+          };
+
+          const sel24 = to24(prevSlot);
+          return (data || []).some(b => to24(b) === sel24);
+        };
+
+        setFormData(prev => {
+          if (!isSelectedNowBooked(prev.timeSlot)) {
+            return prev;
+          }
+
+          setError('This time slot is already taken. Please choose another time.');
+          return { ...prev, timeSlot: '' };
+        });
+      } else {
+        setBookedTimeSlots([]);
+      }
+    } catch (error) {
+      console.error('Error loading booked time slots:', error);
+      setBookedTimeSlots([]);
+    }
+  };
+
+  // Fetch booked slots and return as array (used for an on-submit recheck)
+  const fetchBookedSlotsForDate = async (dateStr) => {
+    if (!doctorId || !dateStr) return [];
+    const normalizeDateForApi = (d) => {
+      if (!d) return d;
+      if (d.includes('-')) return d;
+      if (d.includes('/')) {
+        const parts = d.split('/');
+        if (parts.length === 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          const year = parseInt(parts[2], 10);
+          const dt = new Date(year, month, day);
+          return dt.toISOString().split('T')[0];
+        }
+      }
+      try { return new Date(d).toISOString().split('T')[0]; } catch (e) { return d; }
+    };
+
+    const apiDate = normalizeDateForApi(dateStr);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8080/api/appointments/doctor/${doctorId}/booked-slots?date=${apiDate}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.debug('fetchBookedSlotsForDate', { doctorId, apiDate, status: response.status });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (e) {
+      console.error('fetchBookedSlotsForDate error', e);
+    }
+    return [];
+  };
+
   useEffect(() => {
     if (!user.userId) navigate('/login');
     loadDoctor();
@@ -96,6 +213,33 @@ export default function BookAppointment() {
     }
   };
 
+  const slotTo24 = (s) => {
+    try {
+      const parts = s.trim().split(' ');
+      const time = parts[0];
+      const ampm = parts[1] || null;
+      const [h, m] = time.split(':').map(Number);
+      let hh = h;
+      if (ampm) {
+        if (ampm.toUpperCase() === 'PM' && hh !== 12) hh += 12;
+        if (ampm.toUpperCase() === 'AM' && hh === 12) hh = 0;
+      }
+      return `${hh.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    } catch (e) {
+      return s;
+    }
+  };
+
+  const isSlotBooked = (slot) => {
+    const s24 = slotTo24(slot);
+    return (bookedTimeSlots || []).some(b => slotTo24(b) === s24);
+  };
+
+  const selectedSlotIsBooked = () => {
+    if (!formData.timeSlot) return false;
+    return isSlotBooked(formData.timeSlot);
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -107,6 +251,7 @@ export default function BookAppointment() {
     if (name === 'appointmentDate') {
       const slots = getTimeSlotsForDate(value);
       setAvailableTimeSlots(slots);
+      loadBookedTimeSlots(value);
       setFormData(prev => ({
         ...prev,
         timeSlot: '' // Reset selected time slot
@@ -120,6 +265,35 @@ export default function BookAppointment() {
 
     if (!formData.appointmentDate || !formData.timeSlot || !formData.reason.trim()) {
       setError('Please fill in all fields');
+      return;
+    }
+
+    // Prevent proceeding if chosen slot is now booked
+    const to24 = (s) => {
+      try {
+        const parts = s.trim().split(' ');
+        const time = parts[0];
+        const ampm = parts[1] || null;
+        const [h, m] = time.split(':').map(Number);
+        let hh = h;
+        if (ampm) {
+          if (ampm.toUpperCase() === 'PM' && hh !== 12) hh += 12;
+          if (ampm.toUpperCase() === 'AM' && hh === 12) hh = 0;
+        }
+        return `${hh.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+      } catch (e) {
+        return s;
+      }
+    };
+
+    const selected24 = to24(formData.timeSlot);
+    // Re-check latest booked slots from server to avoid stale state/race
+    const latestBooked = await fetchBookedSlotsForDate(formData.appointmentDate);
+    const booked24 = new Set((latestBooked || []).map(b => to24(b)));
+    if (booked24.has(selected24)) {
+      setError('This time slot is already taken. Please choose another time.');
+      // also update local booked slots so UI reflects it
+      setBookedTimeSlots(latestBooked || []);
       return;
     }
 
@@ -280,37 +454,62 @@ export default function BookAppointment() {
                 gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))',
                 gap: '10px',
               }}>
-                {availableTimeSlots.map(slot => (
-                  <button
-                    key={slot}
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, timeSlot: slot }))}
-                    style={{
-                      padding: '10px 12px',
-                      backgroundColor: formData.timeSlot === slot ? '#3B82F6' : '#f3f4f6',
-                      color: formData.timeSlot === slot ? 'white' : '#6b7280',
-                      border: formData.timeSlot === slot ? 'none' : '1px solid #e5e7eb',
-                      borderRadius: '6px',
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                    }}
-                    onMouseOver={(e) => {
-                      if (formData.timeSlot !== slot) {
-                        e.target.style.backgroundColor = '#e5e7eb';
-                      }
-                    }}
-                    onMouseOut={(e) => {
-                      if (formData.timeSlot !== slot) {
-                        e.target.style.backgroundColor = '#f3f4f6';
-                      }
-                    }}
-                  >
-                    {slot}
-                  </button>
-                ))}
+                {availableTimeSlots.map(slot => {
+                  const booked = isSlotBooked(slot);
+                  return (
+                    <button
+                      key={slot}
+                      type="button"
+                      disabled={booked}
+                      aria-disabled={booked}
+                      title={booked ? 'Time slot already taken' : 'Select this time slot'}
+                      onClick={() => {
+                        if (!booked) {
+                          setFormData(prev => ({ ...prev, timeSlot: slot }));
+                        }
+                      }}
+                      style={{
+                        padding: '10px 12px',
+                        backgroundColor: booked
+                          ? '#e5e7eb'
+                          : formData.timeSlot === slot
+                            ? '#3B82F6'
+                            : '#f3f4f6',
+                        color: booked
+                          ? '#9ca3af'
+                          : formData.timeSlot === slot
+                            ? 'white'
+                            : '#6b7280',
+                        border: formData.timeSlot === slot ? 'none' : '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        cursor: booked ? 'not-allowed' : 'pointer',
+                        opacity: booked ? 0.75 : 1,
+                        pointerEvents: booked ? 'none' : 'auto',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseOver={(e) => {
+                        if (!booked && formData.timeSlot !== slot) {
+                          e.currentTarget.style.backgroundColor = '#e5e7eb';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (!booked && formData.timeSlot !== slot) {
+                          e.currentTarget.style.backgroundColor = '#f3f4f6';
+                        }
+                      }}
+                    >
+                      {booked ? `${slot} (Taken)` : slot}
+                    </button>
+                  );
+                })}
               </div>
+              )}
+            {availableTimeSlots.length > 0 && (
+              <p style={{ marginTop: '10px', color: '#6b7280', fontSize: '13px' }}>
+                Taken slots are disabled and marked as Taken.
+              </p>
             )}
           </div>
 
@@ -340,9 +539,17 @@ export default function BookAppointment() {
           </div>
 
           {/* Submit Button */}
+          <div style={{ marginBottom: '12px' }}>
+            {selectedSlotIsBooked() && (
+              <div style={{ color: '#b91c1c', marginBottom: '8px', fontSize: '14px' }}>
+                Selected time slot is already booked. Please choose another time.
+              </div>
+            )}
+          </div>
+
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || selectedSlotIsBooked()}
             style={{
               width: '100%',
               padding: '14px 20px',

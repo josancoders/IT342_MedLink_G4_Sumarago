@@ -11,7 +11,6 @@ export default function FindDoctors() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
-  const [priceRange, setPriceRange] = useState([0, 300]);
   const [user, setUser] = useState(null);
 
   const specialties = [
@@ -58,8 +57,10 @@ export default function FindDoctors() {
       const response = await fetch('http://localhost:8080/api/doctors');
       if (response.ok) {
         const data = await response.json();
-        setDoctors(data);
-        setFilteredDoctors(data);
+        // Only show doctors who are active (visible to patients)
+        const visible = data.filter(d => d.active === true);
+        setDoctors(visible);
+        setFilteredDoctors(visible);
         setError(null);
       } else {
         setError('Failed to load doctors.');
@@ -74,20 +75,15 @@ export default function FindDoctors() {
 
   const handleSearch = (value) => {
     setSearchTerm(value);
-    filterDoctors(value, selectedSpecialty, priceRange);
+    filterDoctors(value, selectedSpecialty);
   };
 
   const handleSpecialtyChange = (specialty) => {
     setSelectedSpecialty(specialty);
-    filterDoctors(searchTerm, specialty, priceRange);
+    filterDoctors(searchTerm, specialty);
   };
 
-  const handlePriceChange = (range) => {
-    setPriceRange(range);
-    filterDoctors(searchTerm, selectedSpecialty, range);
-  };
-
-  const filterDoctors = (search, specialty, range) => {
+  const filterDoctors = (search, specialty) => {
     let filtered = doctors;
 
     const normalize = (value) => String(value || '').trim().toLowerCase();
@@ -102,10 +98,6 @@ export default function FindDoctors() {
     if (specialty) {
       filtered = filtered.filter(doc => normalize(doc.specialization) === normalize(specialty));
     }
-
-    filtered = filtered.filter(doc =>
-      Number(doc.consultationFee || 0) >= range[0] && Number(doc.consultationFee || 0) <= range[1]
-    );
 
     setFilteredDoctors(filtered);
   };
@@ -247,23 +239,9 @@ export default function FindDoctors() {
                 </div>
               </div>
 
-              <div className="fd-filter-group">
-                <label className="fd-filter-label">Price Range: ₱{priceRange[0]} - ₱{priceRange[1]}</label>
-                <input
-                  type="range"
-                  min="0"
-                  max="300"
-                  step="10"
-                  value={priceRange[1]}
-                  onChange={e => handlePriceChange([priceRange[0], parseInt(e.target.value)])}
-                  className="fd-slider"
-                />
-              </div>
-
               <button type="button" className="fd-clear-filters" onClick={() => {
                 setSearchTerm('');
                 setSelectedSpecialty('');
-                setPriceRange([0, 300]);
                 setFilteredDoctors(doctors);
               }}>Clear Filters</button>
             </aside>

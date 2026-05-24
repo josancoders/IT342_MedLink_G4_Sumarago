@@ -86,6 +86,8 @@ public class DoctorController {
                     doctor.setEducation(doctorDTO.getEducation() != null ? doctorDTO.getEducation() : "");
                     doctor.setBio(doctorDTO.getBio() != null ? doctorDTO.getBio() : "");
                     doctor.setAvailableSchedule(doctorDTO.getAvailableSchedule() != null ? doctorDTO.getAvailableSchedule() : "");
+                    // New doctor profiles are inactive by default so they can finish setup
+                    doctor.setActive(doctorDTO.getActive() != null ? doctorDTO.getActive() : false);
                     
                     Doctor saved = doctorRepository.save(doctor);
                     return ResponseEntity.ok(convertToDTO(saved));
@@ -115,6 +117,7 @@ public class DoctorController {
                     if (doctorDTO.getEducation() != null) doctor.setEducation(doctorDTO.getEducation());
                     if (doctorDTO.getBio() != null) doctor.setBio(doctorDTO.getBio());
                     if (doctorDTO.getAvailableSchedule() != null) doctor.setAvailableSchedule(doctorDTO.getAvailableSchedule());
+                    if (doctorDTO.getActive() != null) doctor.setActive(doctorDTO.getActive());
                     Doctor updated = doctorRepository.save(doctor);
                     return ResponseEntity.ok(convertToDTO(updated));
                 })
@@ -135,6 +138,7 @@ public class DoctorController {
         dto.setEducation(doctor.getEducation());
         dto.setBio(doctor.getBio());
         dto.setAvailableSchedule(doctor.getAvailableSchedule());
+        dto.setActive(doctor.getActive());
         return dto;
     }
 

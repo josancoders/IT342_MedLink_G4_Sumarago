@@ -39,6 +39,9 @@ public class Doctor {
     @Column(columnDefinition = "TEXT")
     private String availableSchedule;
 
+    @Column(nullable = false)
+    private Boolean active = false;
+
     public Doctor() {}
 
     public Doctor(User user, String specialization, BigDecimal consultationFee, String bio) {
@@ -77,4 +80,7 @@ public class Doctor {
 
     public String getAvailableSchedule() { return availableSchedule; }
     public void setAvailableSchedule(String availableSchedule) { this.availableSchedule = availableSchedule; }
+
+    public Boolean getActive() { return active; }
+    public void setActive(Boolean active) { this.active = active; }
 }

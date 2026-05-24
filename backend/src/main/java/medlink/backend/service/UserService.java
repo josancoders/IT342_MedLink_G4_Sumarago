@@ -22,14 +22,16 @@ public class UserService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final EmailService emailService;
 
     @Value("${google.client-id}")
     private String googleClientId;
 
-    public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, JwtProvider jwtProvider) {
+    public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, JwtProvider jwtProvider, EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtProvider = jwtProvider;
+        this.emailService = emailService;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -43,9 +45,18 @@ public class UserService {
 
         User user = new User(request.getName(), request.getEmail(), hashedPassword);
         User saved = userRepository.save(user);
-        
+
         // Generate JWT token
         String token = jwtProvider.generateToken(saved.getEmail());
+
+        // Send welcome email (best-effort)
+        try {
+            if (saved.getEmail() != null && !saved.getEmail().isBlank()) {
+                emailService.sendRegistrationEmail(saved.getEmail(), saved.getFullName());
+            }
+        } catch (Exception e) {
+            System.err.println("Error sending registration email: " + e.getMessage());
+        }
 
         return new AuthResponse(true, "Registration successful.", saved.getId(), saved.getFullName(), saved.getEmail(), saved.getRole(), token);
     }

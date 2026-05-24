@@ -50,12 +50,14 @@ export default function MyAppointments() {
   const Now = new Date();
   const upcoming = appointments.filter(apt => {
     const aptDate = new Date(apt.appointmentDate);
-    return aptDate >= Now && apt.status !== 'CANCELLED';
+    // Upcoming = appointment date is in the future and not cancelled or completed
+    return aptDate >= Now && apt.status !== 'CANCELLED' && apt.status !== 'COMPLETED';
   });
 
   const past = appointments.filter(apt => {
     const aptDate = new Date(apt.appointmentDate);
-    return aptDate < Now || apt.status === 'CANCELLED';
+    // Past = date in the past OR cancelled OR completed
+    return aptDate < Now || apt.status === 'CANCELLED' || apt.status === 'COMPLETED';
   });
 
   const getStatusColor = (status) => {

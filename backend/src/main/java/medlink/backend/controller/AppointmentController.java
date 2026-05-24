@@ -11,8 +11,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import medlink.backend.service.EmailService;
 
 import java.time.LocalDate;
+import org.springframework.dao.DataIntegrityViolationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +35,9 @@ public class AppointmentController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private EmailService emailService;
+
     // Create new appointment
     @PostMapping
     public ResponseEntity<?> createAppointment(@RequestBody AppointmentDTO dto, Authentication auth) {
@@ -40,6 +47,28 @@ public class AppointmentController {
             Doctor doctor = doctorRepository.findById(dto.getDoctorId())
                     .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
+            // Prevent booking if doctor is not active/visible to patients
+            if (doctor.getActive() == null || !doctor.getActive()) {
+                return ResponseEntity.badRequest().body(new HashMap<String, String>() {{
+                    put("success", "false");
+                    put("message", "This doctor is not accepting appointments at this time.");
+                }});
+            }
+
+            boolean slotTaken = appointmentRepository.existsByDoctorIdAndAppointmentDateAndTimeSlotAndStatusNot(
+                doctor.getId(),
+                dto.getAppointmentDate(),
+                dto.getTimeSlot(),
+                "CANCELLED"
+            );
+
+            if (slotTaken) {
+            return ResponseEntity.status(409).body(new HashMap<String, String>() {{
+                put("success", "false");
+                put("message", "This time slot is already taken. Please choose another time.");
+            }});
+            }
+
             Appointment appointment = new Appointment();
             appointment.setPatient(patient);
             appointment.setDoctor(doctor);
@@ -48,7 +77,24 @@ public class AppointmentController {
             appointment.setReason(dto.getReason());
             appointment.setStatus("PENDING");
 
-            Appointment saved = appointmentRepository.save(appointment);
+            Appointment saved;
+            try {
+                saved = appointmentRepository.save(appointment);
+            } catch (DataIntegrityViolationException dive) {
+                return ResponseEntity.status(409).body(new HashMap<String, String>() {{
+                    put("success", "false");
+                    put("message", "This time slot is already taken. Please choose another time.");
+                }});
+            }
+
+            // send confirmation email to patient (non-blocking)
+            try {
+                String info = String.format("Doctor: %s\nDate: %s\nTime: %s", doctor.getUser().getFullName(), saved.getAppointmentDate(), saved.getTimeSlot());
+                emailService.sendAppointmentConfirmation(patient.getEmail(), info);
+            } catch (Exception ex) {
+                // EmailService already swallows send errors; log for visibility
+                System.err.println("Failed to queue appointment email: " + ex.getMessage());
+            }
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -90,6 +136,21 @@ public class AppointmentController {
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
+    }
+
+    // Get booked time slots for a doctor on a given date
+    @GetMapping("/doctor/{doctorId}/booked-slots")
+    public ResponseEntity<List<String>> getBookedTimeSlots(
+            @PathVariable Long doctorId,
+            @RequestParam LocalDate date) {
+        List<String> slots = appointmentRepository
+                .findByDoctorIdAndAppointmentDateAndStatusNot(doctorId, date, "CANCELLED")
+                .stream()
+                .map(Appointment::getTimeSlot)
+                .distinct()
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(slots);
     }
 
     // Get doctor's appointment count

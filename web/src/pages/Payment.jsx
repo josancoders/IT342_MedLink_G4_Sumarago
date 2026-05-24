@@ -47,6 +47,23 @@ export default function Payment() {
         reason: appointmentData.reason,
       });
       
+      // Pre-check slot availability to avoid proceeding to payment for a taken slot
+      try {
+        const checkResp = await fetch(`http://localhost:8080/api/appointments/doctor/${appointmentData.doctorId}/booked-slots?date=${appointmentData.appointmentDate}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (checkResp.ok) {
+          const booked = await checkResp.json();
+          if ((booked || []).includes(appointmentData.timeSlot)) {
+            alert('This time slot was just taken. Please choose another time.');
+            navigate(-1);
+            return;
+          }
+        }
+      } catch (chkErr) {
+        console.warn('Could not verify slot availability before payment', chkErr);
+      }
+
       // Create the appointment
       const response = await fetch('http://localhost:8080/api/appointments', {
         method: 'POST',
@@ -74,6 +91,31 @@ export default function Payment() {
       }
 
       if (response.ok) {
+        // record a payment on the backend and send confirmation email
+        try {
+          const paymentResp = await fetch('http://localhost:8080/api/payments', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              appointmentId: responseData.appointmentId,
+              amount: String(appointmentData.consultationFee),
+              provider: 'stripe',
+              transactionId: `SIMULATED-${Date.now()}`
+            }),
+          });
+
+          if (!paymentResp.ok) {
+            const err = await paymentResp.json().catch(() => ({ message: 'Payment API error' }));
+            console.warn('Payment API failed:', err);
+            // continue to confirmation page even if email fails
+          }
+        } catch (payErr) {
+          console.error('Error calling payment API:', payErr);
+        }
+
         navigate('/appointment-confirmation', { 
           state: { 
             appointmentId: responseData.appointmentId,

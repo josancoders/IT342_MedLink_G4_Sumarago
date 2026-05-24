@@ -4,16 +4,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 export default function DoctorProfile() {
   const navigate = useNavigate();
   const location = useLocation();
-  const SPECIALTIES = [
-    'Cardiologist',
-    'Neurologist',
-    'Dermatologist',
-    'Pediatrician',
-    'Orthopedist',
-    'General Practitioner',
-    'Psychiatrist',
-    'Ophthalmologist',
-  ];
   const [user, setUser] = useState(null);
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -23,6 +13,7 @@ export default function DoctorProfile() {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
+    active: false,
     phone: '',
     specialization: '',
     consultationFee: '',
@@ -81,6 +72,7 @@ export default function DoctorProfile() {
         setFormData({
           fullName: data.fullName || '',
           email: user?.email || '',
+          active: data.active != null ? data.active : false,
           phone: data.phone || '',
           specialization: data.specialization || '',
           consultationFee: data.consultationFee || '',
@@ -115,6 +107,7 @@ export default function DoctorProfile() {
         setFormData({
           fullName: user?.name || '',
           email: user?.email || '',
+          active: false,
           phone: '',
           specialization: '',
           consultationFee: '',
@@ -132,6 +125,7 @@ export default function DoctorProfile() {
       setFormData({
         fullName: user?.name || '',
         email: user?.email || '',
+        active: false,
         phone: '',
         specialization: '',
         consultationFee: '',
@@ -161,6 +155,7 @@ export default function DoctorProfile() {
       const token = localStorage.getItem('token');
       const updateData = {
         fullName: formData.fullName || null,
+        active: formData.active != null ? formData.active : null,
         specialization: formData.specialization || null,
         consultationFee: formData.consultationFee ? parseFloat(formData.consultationFee) : null,
         bio: formData.bio || null,
@@ -459,8 +454,12 @@ export default function DoctorProfile() {
                       <p style={{ margin: '6px 0 0 0', color: '#6b7280', fontSize: '13px' }}>{formData.specialization || 'Doctor'}</p>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <span style={{ backgroundColor: '#fef3c7', color: '#b45309', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700 }}>₱{formData.consultationFee || '0'}/session</span>
-                      <span style={{ backgroundColor: '#d1fae5', color: '#047857', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700 }}>Active</span>
+                      <span style={{ backgroundColor: '#fef3c7', color: '#b45309', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700 }}>${formData.consultationFee || '0'}/session</span>
+                      {(formData.active ?? doctor?.active ?? false) ? (
+                        <span style={{ backgroundColor: '#d1fae5', color: '#047857', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700 }}>Active</span>
+                      ) : (
+                        <span style={{ backgroundColor: '#f3f4f6', color: '#6b7280', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700 }}>Inactive</span>
+                      )}
                     </div>
                   </div>
                   <div style={{ marginTop: '10px', display: 'flex', gap: '16px', color: '#6b7280', fontSize: '13px', flexWrap: 'wrap' }}>
@@ -499,7 +498,7 @@ export default function DoctorProfile() {
                     </div>
                     <div>
                       <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Consultation Fee</p>
-                      <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>₱{formData.consultationFee || '0'}</p>
+                      <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>${formData.consultationFee || '0'}</p>
                     </div>
                     <div>
                       <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Location</p>
@@ -531,6 +530,18 @@ export default function DoctorProfile() {
                       />
                     </div>
 
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingTop: '6px' }}>
+                      <label style={{ margin: 0, fontWeight: 600, color: '#374151', fontSize: '13px' }}>Visible to patients</label>
+                      <input
+                        type="checkbox"
+                        name="active"
+                        checked={!!formData.active}
+                        onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                        style={{ width: '18px', height: '18px' }}
+                        title="When enabled the doctor will appear in patient search and booking"
+                      />
+                    </div>
+
                     <div>
                       <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, color: '#374151', fontSize: '13px' }}>Phone</label>
                       <input
@@ -545,18 +556,23 @@ export default function DoctorProfile() {
                       <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, color: '#374151', fontSize: '13px' }}>Specialization</label>
                       <select
                         name="specialization"
-                        value={formData.specialization}
+                        value={formData.specialization || ''}
                         onChange={handleInputChange}
                         style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box', backgroundColor: 'white' }}
                       >
-                        <option value="">Select specialty</option>
-                        {SPECIALTIES.map((specialty) => (
-                          <option key={specialty} value={specialty}>{specialty}</option>
-                        ))}
+                        <option value="" disabled>Select specialization</option>
+                        <option>Cardiologist</option>
+                        <option>Neurologist</option>
+                        <option>Dermatologist</option>
+                        <option>Pediatrician</option>
+                        <option>Orthopedist</option>
+                        <option>General Practitioner</option>
+                        <option>Psychiatrist</option>
+                        <option>Ophthalmologist</option>
                       </select>
                     </div>
                     <div>
-                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, color: '#374151', fontSize: '13px' }}>Consultation Fee (₱)</label>
+                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, color: '#374151', fontSize: '13px' }}>Consultation Fee ($)</label>
                       <input
                         type="number"
                         name="consultationFee"

@@ -14,6 +14,7 @@ public class DoctorDTO {
     private String education;
     private String bio;
     private String availableSchedule;
+    private Boolean active;
 
     public DoctorDTO() {}
 
@@ -49,4 +50,7 @@ public class DoctorDTO {
 
     public String getAvailableSchedule() { return availableSchedule; }
     public void setAvailableSchedule(String availableSchedule) { this.availableSchedule = availableSchedule; }
+
+    public Boolean getActive() { return active; }
+    public void setActive(Boolean active) { this.active = active; }
 }

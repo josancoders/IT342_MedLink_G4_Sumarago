@@ -188,7 +188,6 @@ export default function Dashboard() {
                         <span className="db-doc-fee">{doc.consultationFee ? `₱${doc.consultationFee}` : '₱N/A'}</span>
                         <span className="db-doc-schedule">{doc.schedule || doc.exp || 'Available on request'}</span>
                       </div>
-                      <p className="db-doc-bio">{doc.bio ? doc.bio.substring(0, 100) + '...' : 'Experienced healthcare professional'}</p>
                       <div className="db-doc-actions">
                         <Link to={`/doctors/${doc.id}`} className="db-btn-detail">View Profile</Link>
                         <button className="db-book-btn" onClick={() => navigate(`/book-appointment/${doc.id}`)}>Book Appointment</button>

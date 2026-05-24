@@ -63,11 +63,17 @@ export default function DoctorAppointments() {
     }
   };
 
-  const filterOptions = ['All', 'Confirmed', 'Pending', 'Completed', 'Cancelled'];
+  const filterOptions = ['All', 'Upcoming', 'Pending', 'Completed', 'Cancelled'];
   
   const filteredAppointments = filter === 'All' 
     ? appointments 
-    : appointments.filter(apt => apt.status === filter.toUpperCase() || apt.status === `PENDING_${filter.toUpperCase()}`);
+    : appointments.filter(apt => {
+        if (filter === 'Upcoming') {
+          return apt.status === 'CONFIRMED';
+        }
+
+        return apt.status === filter.toUpperCase() || apt.status === `PENDING_${filter.toUpperCase()}`;
+      });
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f5f7fa' }}>
@@ -218,7 +224,9 @@ export default function DoctorAppointments() {
                   {/* Status & Actions */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <span style={getStatusBadge(apt.status)}>
-                      {apt.status.charAt(0) + apt.status.slice(1).toLowerCase()}
+                      {apt.status === 'CONFIRMED'
+                        ? 'Upcoming'
+                        : apt.status.charAt(0) + apt.status.slice(1).toLowerCase()}
                     </span>
 
                     <button

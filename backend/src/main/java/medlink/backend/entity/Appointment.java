@@ -5,7 +5,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "appointments")
+@Table(name = "appointments", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"doctor_id", "appointment_date", "time_slot"})
+})
 public class Appointment {
 
     @Id

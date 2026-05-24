@@ -71,27 +71,34 @@ export default function DoctorDetail() {
       <div className="dd-main">
         <header className="dd-header">
           <Link to="/find-doctors" className="dd-back">← Back</Link>
-          <h2>Doctor Profile</h2>
+          <h2>Doctor's Profile</h2>
           <div></div>
         </header>
 
         <main className="dd-content">
           <div className="dd-container">
-            <div className="dd-card">
-              <div className="dd-header-section">
-                <div className="dd-avatar">{doctor.fullName.split(' ').map(n => n[0]).join('')}</div>
-                <div className="dd-info">
-                  <h1>{doctor.fullName}</h1>
-                  <p className="dd-specialty">{doctor.specialization}</p>
-                  <div className="dd-meta">
-                    <span className="dd-fee">💰 ₱{doctor.consultationFee}/session</span>
-                    <span className="dd-status">✓ Available</span>
+            <div className="dd-card" style={{ padding: '28px', borderRadius: 12 }}>
+              <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+                <div style={{ width: 84, height: 84, borderRadius: 12, backgroundColor: '#E8F0FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 28, color: '#0f172a' }}>
+                  {doctor.fullName.split(' ').map(n => n[0]).join('')}
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0f172a' }}>Dr. {doctor.fullName}</h1>
+                  <p style={{ margin: '6px 0 12px 0', color: '#2563EB', fontWeight: 600 }}>{doctor.specialization}</p>
+
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{ backgroundColor: '#FEF3C7', color: '#b45309', padding: '6px 12px', borderRadius: 20, fontWeight: 700 }}>Consultation Fee: ₱{doctor.consultationFee}</span>
+                    <span style={{ backgroundColor: '#DFF6EA', color: '#047857', padding: '6px 12px', borderRadius: 20, fontWeight: 700 }}>Available</span>
+                    {doctor.experienceYears && <span style={{ backgroundColor: '#F3F4F6', color: '#6b7280', padding: '6px 12px', borderRadius: 20 }}> {doctor.experienceYears} years experience</span>}
                   </div>
                 </div>
               </div>
 
+              <hr style={{ margin: '20px 0', border: 'none', borderTop: '1px solid #eef2f7' }} />
+
               <div className="dd-section">
-                <h3>About</h3>
+                <h3>Doctor Biography</h3>
                 <p>{doctor.bio || 'Experienced healthcare professional with dedication to patient care.'}</p>
               </div>
 
@@ -102,14 +109,7 @@ export default function DoctorDetail() {
                 </div>
               )}
 
-              {doctor.schedule && (
-                <div className="dd-section">
-                  <h3>Available Schedule</h3>
-                  <p>{doctor.schedule}</p>
-                </div>
-              )}
-
-              <div className="dd-actions">
+              <div className="dd-actions" style={{ marginTop: 18 }}>
                 <Link to={`/book-appointment/${doctor.id}`} className="dd-btn-primary">Book Appointment</Link>
                 <button className="dd-btn-secondary" onClick={() => navigate(-1)}>Go Back</button>
               </div>

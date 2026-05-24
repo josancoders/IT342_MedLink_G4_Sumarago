@@ -3,12 +3,6 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import './Dashboard.css';
 import { getMyAppointments } from '../api/auth';
 
-const RECOMMENDED_DOCTORS = [
-  { id: 1, name: 'Dr. Sophia Chen',   initials: 'SC', color: '#dbeafe', specialty: 'Cardiologist',  exp: '14 yrs', schedule: 'Mon, Wed, Fri', fee: 120 },
-  { id: 2, name: 'Dr. Marcus Rivera', initials: 'MR', color: '#fef3c7', specialty: 'Neurologist',   exp: '10 yrs', schedule: 'Tue, Thu',      fee: 150 },
-  { id: 3, name: 'Dr. Aisha Patel',   initials: 'AP', color: '#ede9fe', specialty: 'Dermatologist', exp: '8 yrs',  schedule: 'Mon, Fri',      fee: 90  },
-];
-
 // upcoming will be loaded dynamically for the logged-in user
 
 const NAV_LINKS = [
@@ -106,6 +100,8 @@ export default function Dashboard() {
     ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
     : 'U';
 
+  const visibleDoctors = doctors.filter(doc => doc.active === true);
+
   return (
     <div className="db-root">
       {/* ── Left Sidebar ── */}
@@ -172,8 +168,8 @@ export default function Dashboard() {
                 <a href="/find-doctors" className="db-view-all">View All →</a>
               </div>
               <div className="db-doctor-cards">
-                {doctors && doctors.length > 0 ? (
-                  doctors.slice(0,3).map(doc => (
+                {visibleDoctors.length > 0 ? (
+                  visibleDoctors.slice(0,3).map(doc => (
                     <div key={doc.id} className="db-doctor-card">
                       <div className="db-doc-top">
                         <div className="db-doc-avatar" style={{ background: doc.color || '#dbeafe' }}>

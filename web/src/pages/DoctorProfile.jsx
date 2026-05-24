@@ -24,13 +24,23 @@ export default function DoctorProfile() {
   });
   const [schedule, setSchedule] = useState({
     Sunday: { open: '', close: '', available: false, breaks: [] },
-    Monday: { open: '', close: '', available: true, breaks: [] },
-    Tuesday: { open: '', close: '', available: true, breaks: [] },
-    Wednesday: { open: '', close: '', available: true, breaks: [] },
-    Thursday: { open: '', close: '', available: true, breaks: [] },
-    Friday: { open: '', close: '', available: true, breaks: [] },
+    Monday: { open: '', close: '', available: false, breaks: [] },
+    Tuesday: { open: '', close: '', available: false, breaks: [] },
+    Wednesday: { open: '', close: '', available: false, breaks: [] },
+    Thursday: { open: '', close: '', available: false, breaks: [] },
+    Friday: { open: '', close: '', available: false, breaks: [] },
     Saturday: { open: '', close: '', available: false, breaks: [] },
   });
+
+  const emptySchedule = {
+    Sunday: { open: '', close: '', available: false, breaks: [] },
+    Monday: { open: '', close: '', available: false, breaks: [] },
+    Tuesday: { open: '', close: '', available: false, breaks: [] },
+    Wednesday: { open: '', close: '', available: false, breaks: [] },
+    Thursday: { open: '', close: '', available: false, breaks: [] },
+    Friday: { open: '', close: '', available: false, breaks: [] },
+    Saturday: { open: '', close: '', available: false, breaks: [] },
+  };
   const [breakModal, setBreakModal] = useState({
     isOpen: false,
     day: null,
@@ -88,16 +98,10 @@ export default function DoctorProfile() {
             setSchedule(JSON.parse(data.availableSchedule));
           } catch (e) {
             console.log('Could not parse schedule');
-            setSchedule({
-              Sunday: { open: '', close: '', available: false, breaks: [] },
-              Monday: { open: '', close: '', available: true, breaks: [] },
-              Tuesday: { open: '', close: '', available: true, breaks: [] },
-              Wednesday: { open: '', close: '', available: true, breaks: [] },
-              Thursday: { open: '', close: '', available: true, breaks: [] },
-              Friday: { open: '', close: '', available: true, breaks: [] },
-              Saturday: { open: '', close: '', available: false, breaks: [] },
-            });
+            setSchedule(emptySchedule);
           }
+        } else {
+          setSchedule(emptySchedule);
         }
       } else {
         // Doctor record doesn't exist yet - initialize with empty form
@@ -116,6 +120,7 @@ export default function DoctorProfile() {
           education: '',
           bio: '',
         });
+        setSchedule(emptySchedule);
         setMessage('Profile will be created on first save');
       }
     } catch (error) {
@@ -134,6 +139,7 @@ export default function DoctorProfile() {
         education: '',
         bio: '',
       });
+      setSchedule(emptySchedule);
       setMessage('Note: Profile will be created on first save');
     } finally {
       setLoading(false);
@@ -453,13 +459,24 @@ export default function DoctorProfile() {
                       <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#0f172a' }}>{user.name}</h3>
                       <p style={{ margin: '6px 0 0 0', color: '#6b7280', fontSize: '13px' }}>{formData.specialization || 'Doctor'}</p>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                       <span style={{ backgroundColor: '#fef3c7', color: '#b45309', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700 }}>${formData.consultationFee || '0'}/session</span>
                       {(formData.active ?? doctor?.active ?? false) ? (
                         <span style={{ backgroundColor: '#d1fae5', color: '#047857', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700 }}>Active</span>
                       ) : (
                         <span style={{ backgroundColor: '#f3f4f6', color: '#6b7280', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700 }}>Inactive</span>
                       )}
+                      <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', padding: '6px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: 600, color: '#374151' }}>
+                        <input
+                          type="checkbox"
+                          name="active"
+                          checked={!!formData.active}
+                          onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                          style={{ width: '16px', height: '16px', margin: 0 }}
+                          title="When enabled the doctor will appear in patient search and booking"
+                        />
+                        Visible to patients
+                      </label>
                     </div>
                   </div>
                   <div style={{ marginTop: '10px', display: 'flex', gap: '16px', color: '#6b7280', fontSize: '13px', flexWrap: 'wrap' }}>
@@ -490,7 +507,7 @@ export default function DoctorProfile() {
                     </div>
                     <div>
                       <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Phone</p>
-                      <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{formData.phone || '+1 (555) 012-3456'}</p>
+                      <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{formData.phone || '—'}</p>
                     </div>
                     <div>
                       <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Specialization</p>
@@ -502,15 +519,15 @@ export default function DoctorProfile() {
                     </div>
                     <div>
                       <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Location</p>
-                      <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{formData.location || 'New York, NY'}</p>
+                      <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{formData.location || '—'}</p>
                     </div>
                     <div>
                       <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Languages</p>
-                      <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{formData.languages || 'English, Spanish'}</p>
+                      <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{formData.languages || '—'}</p>
                     </div>
                     <div>
                       <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Education</p>
-                      <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{formData.education || 'MD, Johns Hopkins University'}</p>
+                      <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{formData.education || '—'}</p>
                     </div>
 
                     {/* Schedule removed here to avoid duplicate display; final schedule renders below */}
@@ -527,18 +544,6 @@ export default function DoctorProfile() {
                         onChange={handleInputChange}
                         placeholder="e.g., Dr. John Doe"
                         style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }}
-                      />
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingTop: '6px' }}>
-                      <label style={{ margin: 0, fontWeight: 600, color: '#374151', fontSize: '13px' }}>Visible to patients</label>
-                      <input
-                        type="checkbox"
-                        name="active"
-                        checked={!!formData.active}
-                        onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                        style={{ width: '18px', height: '18px' }}
-                        title="When enabled the doctor will appear in patient search and booking"
                       />
                     </div>
 
@@ -787,7 +792,7 @@ export default function DoctorProfile() {
                   <div style={{ marginTop: '24px' }}>
                     <p style={{ margin: '0 0 16px 0', fontSize: '12px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>Bio</p>
                     <p style={{ margin: 0, fontSize: '14px', color: '#0f172a', lineHeight: '1.6' }}>
-                      {formData.bio || 'Board-certified Neurologist with 10+ years of experience in diagnosing and treating neurological disorders. Passionate about patient-centered care and evidence-based medicine.'}
+                      {formData.bio || '—'}
                     </p>
 
                     {/* Available Schedule Display */}

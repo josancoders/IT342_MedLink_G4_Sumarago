@@ -157,7 +157,6 @@ export default function DoctorDashboard() {
             position: 'absolute',
             bottom: '20px',
             left: '20px',
-            right: '20px',
             padding: '10px 16px',
             backgroundColor: '#ef4444',
             color: 'white',
@@ -166,6 +165,7 @@ export default function DoctorDashboard() {
             cursor: 'pointer',
             fontWeight: 600,
             fontSize: '13px',
+            width: 'auto',
           }}
         >
           🚪 Logout
